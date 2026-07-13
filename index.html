@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Nivesh R - B.Tech CSE student at Karunya University. Full Stack Developer, AI/ML enthusiast, and IoT builder.">
+    <meta name="keywords" content="Nivesh R, Portfolio, Full Stack Developer, CSE, Karunya, AI, ML, IoT, React, Node.js">
+    <meta name="author" content="Nivesh R">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Nivesh R | Full Stack Developer & AI Enthusiast">
+    <meta property="og:description" content="Check out my projects and technical journey in Full Stack Development, AI, and IoT.">
+    
+    <title>Nivesh R | Portfolio</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="CSS/style.css">
+    <link rel="icon" type="image/jpeg" href="assets/img/NIVESH R.jpg">
+</head>
+
+<body>
+
+    <!-- HEADER -->
+    <header id="header">
+        <div class="container">
+            <nav>
+                <div class="logo">NIVEN<span>_</span></div>
+                <div class="nav-right">
+                    <ul class="nav-links" id="navLinks">
+                        <li><a href="#about" class="nav-link">About</a></li>
+                        <li><a href="#education" class="nav-link">Education</a></li>
+                        <li><a href="#skills" class="nav-link">Skills</a></li>
+                        <li><a href="#projects" class="nav-link">Projects</a></li>
+                        <li><a href="#certificates" class="nav-link">Certificates</a></li>
+                        <li><a href="#contact" class="nav-link">Contact</a></li>
+                    </ul>
+                    <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                    <button class="menu-toggle" id="menuToggle" aria-label="Toggle menu">
+                        <span></span><span></span><span></span>
+                    </button>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <!-- HERO -->
+    <section class="hero" id="home">
+        <div class="container">
+            <div class="hero-inner">
+                <div class="hero-badge">
+                    Available for opportunities
+                </div>
+                <h1>
+                    Hi, I'm<br>
+                    <span class="name-highlight">Nivesh R</span>
+                </h1>
+                <p class="hero-sub">
+                    <span class="typewriter-wrap">
+                        <span id="typewriter-text"></span>
+                    </span>
+                    <br>
+                    B.Tech CSE student at Karunya Institute of Technology and Science. Building full-stack apps,
+                    AI-powered platforms & IoT systems.
+                </p>
+                <div class="hero-actions">
+                    <a href="#projects" class="btn btn-primary">
+                        <i class="fas fa-rocket"></i> View My Work
+                    </a>
+                    <a href="#contact" class="btn btn-ghost">
+                        <i class="fas fa-paper-plane"></i> Get In Touch
+                    </a>
+                    <a href="assets/pdf/resume/NIVESH_R_RESUME.pdf" class="btn btn-ghost" target="_blank">
+                        <i class="fas fa-download"></i> Resume
+                    </a>
+                </div>
+            </div>
+        </div>
+        <!-- <div class="hero-scroll">
+            <div class="scroll-line"></div>
+            <span>Scroll to explore</span>
+        </div> -->
+    </section>
+
+    <!-- ABOUT -->
+    <section id="about">
+        <div class="container">
+            <div class="reveal">
+                <p class="section-label">Who I Am</p>
+                <h2 class="section-title">About <span>Me</span></h2>
+            </div>
+            <div class="about-grid">
+                <div class="about-avatar-wrap reveal">
+                    <div class="avatar-box">
+                        <img src="./assets/img/NIVESH R.jpg" alt="Nivesh R"
+                            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+                        <div class="avatar-placeholder" style="display:none;">NR</div>
+                    </div>
+                    <div class="avatar-deco"></div>
+                </div>
+                <div class="about-info reveal">
+                    <h3>Nivesh R</h3>
+                    <p class="about-role">CSE Student · Full Stack Developer · AI Enthusiast</p>
+                    <p>I'm a passionate B.Tech Computer Science student at Karunya Institute of Technology and Science
+                        (2023–27), specializing in building full-stack web applications, AI-powered platforms, and IoT
+                        systems.</p>
+                    <p>I love transforming ideas into working digital products — from PHP-MySQL school systems and
+                        React-based resume analyzers to ML-powered toll verification and real-time water monitoring
+                        platforms.</p>
+                    <p>Beyond coding, I enjoy listening to music, reading, and playing the drums.</p>
+                    <div class="about-stats">
+                        <div class="stat-box">
+                            <div class="stat-num">8+</div>
+                            <div class="stat-label">Projects Built</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-num">7.71</div>
+                            <div class="stat-label">CGPA</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-num">2027</div>
+                            <div class="stat-label">Graduating</div>
+                        </div>
+                    </div>
+                    <div class="social-row">
+                        <a href="https://github.com/theniveshr" target="_blank" class="social-btn">
+                            <i class="fab fa-github"></i> GitHub
+                        </a>
+                        <a href="https://www.linkedin.com/in/nivesh-r-4646972b3" target="_blank" class="social-btn">
+                            <i class="fab fa-linkedin"></i> LinkedIn
+                        </a>
+                        <a href="https://www.instagram.com/______.nivesh_arn.______/?hl=en" target="_blank"
+                            class="social-btn">
+                            <i class="fab fa-instagram"></i> Instagram
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- EDUCATION -->
+    <section id="education">
+        <div class="container">
+            <div class="reveal">
+                <p class="section-label">My Journey</p>
+                <h2 class="section-title">Education <span>Timeline</span></h2>
+            </div>
+            <div class="edu-timeline">
+                <div class="edu-entry">
+                    <div class="edu-dot"><i class="fas fa-graduation-cap"></i></div>
+                    <div class="edu-body">
+                        <div class="edu-header">
+                            <div class="edu-info-main">
+                                <span class="edu-year-tag">2023 – 2027</span>
+                                <h3>Karunya Institute of Technology and Science</h3>
+                                <h4>B.Tech in Computer Science and Engineering</h4>
+                            </div>
+                            <div class="edu-logo-wrap">
+                                <img src="assets/img/education/karunya.png" alt="Karunya Logo">
+                            </div>
+                        </div>
+                        <p>Pursuing undergraduate degree with focus on software development, algorithms, web
+                            technologies, AI/ML, and IoT systems.</p>
+                        <span class="edu-score">CGPA: 7.71 / 10</span>
+                    </div>
+                </div>
+                <div class="edu-entry">
+                    <div class="edu-dot"><i class="fas fa-school"></i></div>
+                    <div class="edu-body">
+                        <div class="edu-header">
+                            <div class="edu-info-main">
+                                <span class="edu-year-tag">2021 – 2023</span>
+                                <h3>Holy Spirit Matric Hr. Sec. School</h3>
+                                <h4>Higher Secondary Education (Tamil Nadu State Board)</h4>
+                            </div>
+                            <div class="edu-logo-wrap">
+                                <img src="assets/img/education/holy.png" alt="Holy Spirit Logo">
+                            </div>
+                        </div>
+                        <p>Completed 12th grade with focus on Computer Science, Mathematics, and Physics.</p>
+                        <span class="edu-score">Percentage: 86%</span>
+                    </div>
+                </div>
+                <div class="edu-entry">
+                    <div class="edu-dot"><i class="fas fa-book"></i></div>
+                    <div class="edu-body">
+                        <div class="edu-header">
+                            <div class="edu-info-main">
+                                <span class="edu-year-tag">2019 – 2021</span>
+                                <h3>Holy Spirit Matric Hr. Sec. School</h3>
+                                <h4>Secondary Education (Tamil Nadu State Board)</h4>
+                            </div>
+                            <div class="edu-logo-wrap">
+                                <img src="assets/img/education/holy.png" alt="Holy Spirit Logo">
+                            </div>
+                        </div>
+                        <p>Completed 10th grade with exceptional academic performance.</p>
+                        <span class="edu-score">Percentage: 100%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SKILLS -->
+    <section id="skills">
+        <div class="container">
+            <div class="reveal">
+                <p class="section-label">What I Know</p>
+                <h2 class="section-title">Technical <span>Skills</span></h2>
+            </div>
+            <div class="skills-groups reveal">
+                <div class="skill-group">
+                    <div class="skill-group-title"><i class="fas fa-code"></i> Programming</div>
+                    <div class="skill-tags">
+                        <span class="skill-tag">Python</span>
+                        <span class="skill-tag">Java</span>
+                        <!-- <span class="skill-tag">C</span> -->
+                        <span class="skill-tag">PHP</span>
+                    </div>
+                </div>
+                <div class="skill-group">
+                    <div class="skill-group-title"><i class="fas fa-layer-group"></i> Frontend</div>
+                    <div class="skill-tags">
+                        <span class="skill-tag">HTML5</span>
+                        <span class="skill-tag">CSS3</span>
+                        <span class="skill-tag">JavaScript</span>
+                        <span class="skill-tag">React</span>
+                    </div>
+                </div>
+                <div class="skill-group">
+                    <div class="skill-group-title"><i class="fas fa-server"></i> Backend</div>
+                    <div class="skill-tags">
+                        <span class="skill-tag">Node.js</span>
+                        <span class="skill-tag">Express.js</span>
+                        <span class="skill-tag">FastAPI</span>
+                        <span class="skill-tag">Flask</span>
+                    </div>
+                </div>
+                <div class="skill-group">
+                    <div class="skill-group-title"><i class="fas fa-database"></i> Databases</div>
+                    <div class="skill-tags">
+                        <span class="skill-tag">MySQL</span>
+                        <span class="skill-tag">MongoDB</span>
+                        <span class="skill-tag">SQLite</span>
+                    </div>
+                </div>
+                <div class="skill-group">
+                    <div class="skill-group-title"><i class="fas fa-brain"></i> AI / ML</div>
+                    <div class="skill-tags">
+                        <span class="skill-tag">Random Forest</span>
+                        <span class="skill-tag">Isolation Forest</span>
+                        <span class="skill-tag">YOLO</span>
+                        <span class="skill-tag">PaddleOCR</span>
+                        <span class="skill-tag">Gemini API</span>
+                        <span class="skill-tag">Llama 3.1</span>
+                    </div>
+                </div>
+                <div class="skill-group">
+                    <div class="skill-group-title"><i class="fas fa-tools"></i> DevOps & Tools</div>
+                    <div class="skill-tags">
+                        <span class="skill-tag">Docker</span>
+                        <span class="skill-tag">Kubernetes</span>
+                        <span class="skill-tag">GitHub Actions</span>
+                        <span class="skill-tag">Git</span>
+                        <span class="skill-tag">Prometheus</span>
+                        <span class="skill-tag">Grafana</span>
+                    </div>
+                </div>
+                <div class="skill-group">
+                    <div class="skill-group-title"><i class="fas fa-microchip"></i> IoT / Embedded</div>
+                    <div class="skill-tags">
+                        <span class="skill-tag">NodeMCU (ESP8266)</span>
+                        <span class="skill-tag">Arduino</span>
+                        <span class="skill-tag">I2C LCD</span>
+                        <span class="skill-tag">Sensors</span>
+                    </div>
+                </div>
+                <div class="skill-group">
+                    <div class="skill-group-title"><i class="fas fa-book-open"></i> CS Fundamentals</div>
+                    <div class="skill-tags">
+                        <span class="skill-tag">DSA</span>
+                        <span class="skill-tag">DBMS</span>
+                        <span class="skill-tag">OOP</span>
+                        <span class="skill-tag">Operating Systems</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- PROJECTS -->
+    <section id="projects">
+        <div class="container">
+            <div class="reveal">
+                <p class="section-label">What I've Built</p>
+                <h2 class="section-title">My <span>Projects</span></h2>
+            </div>
+            <div class="projects-grid">
+
+                <div class="project-card">
+                    <div class="project-header">
+                        <div class="project-icon">📄</div>
+                        <div class="project-links-row">
+                            <a href="https://github.com/theniveshr/CareerArc.git" target="_blank" class="icon-btn" title="GitHub"><i
+                                    class="fab fa-github"></i></a>
+                        </div>
+                    </div>
+                    <div class="project-body">
+                        <h3>CAREERARC</h3>
+                        <p>AI Resume Intelligence Platform with ATS scoring, job matching, and content optimization.
+                            Full-stack app using React, Node.js, Express, and MongoDB. Integrated Llama 3.1 & Gemini
+                            APIs for insights.</p>
+                        <div class="project-tech">
+                            <span class="tech-tag">React</span>
+                            <span class="tech-tag">Node.js</span>
+                            <span class="tech-tag">MongoDB</span>
+                            <span class="tech-tag">Llama 3.1</span>
+                            <span class="tech-tag">Gemini</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="project-card">
+                    <div class="project-header">
+                        <div class="project-icon">💧</div>
+                        <div class="project-links-row">
+                            <a href="https://github.com/theniveshr/HydroWatch.git" target="_blank" class="icon-btn" title="GitHub"><i
+                                    class="fab fa-github"></i></a>
+                        </div>
+                    </div>
+                    <div class="project-body">
+                        <h3>HydroWatch</h3>
+                        <p>AI-powered real-time water pipeline monitoring platform. Random Forest & Isolation Forest
+                            models detect leaks and anomalies with ~94% accuracy. Deployed with Docker, Kubernetes &
+                            GitHub Actions CI/CD.</p>
+                        <div class="project-tech">
+                            <span class="tech-tag">FastAPI</span>
+                            <span class="tech-tag">Python</span>
+                            <span class="tech-tag">Prometheus</span>
+                            <span class="tech-tag">Grafana</span>
+                            <span class="tech-tag">Docker</span>
+                            <span class="tech-tag">K8s</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="project-card">
+                    <div class="project-header">
+                        <div class="project-icon">🚗</div>
+                        <div class="project-links-row">
+                            <a href="https://github.com/theniveshr/SMART-TAG.git" target="_blank" class="icon-btn" title="GitHub"><i
+                                    class="fab fa-github"></i></a>
+                        </div>
+                    </div>
+                    <div class="project-body">
+                        <h3>Smart-Tag</h3>
+                        <p>ML-based toll verification and fraud detection system using YOLO for vehicle detection and
+                            PaddleOCR for license plate recognition. Built a Flask dashboard for real-time monitoring
+                            and visualization.</p>
+                        <div class="project-tech">
+                            <span class="tech-tag">YOLO</span>
+                            <span class="tech-tag">PaddleOCR</span>
+                            <span class="tech-tag">Flask</span>
+                            <span class="tech-tag">Python</span>
+                            <span class="tech-tag">CV</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="project-card">
+                    <div class="project-header">
+                        <div class="project-icon">🔍</div>
+                        <div class="project-links-row">
+                            <a href="https://github.com/theniveshr/lost-found_hub.git" target="_blank" class="icon-btn" title="GitHub"><i
+                                    class="fab fa-github"></i></a>
+                        </div>
+                    </div>
+                    <div class="project-body">
+                        <h3>Lost & Found Hub</h3>
+                        <p>Full-stack Lost & Found portal with secure user authentication, item posting, and advanced
+                            search/filter features. Integrated EmailJS for automated real-time email notifications on
+                            matched items.</p>
+                        <div class="project-tech">
+                            <span class="tech-tag">Node.js</span>
+                            <span class="tech-tag">MySQL</span>
+                            <span class="tech-tag">EmailJS</span>
+                            <span class="tech-tag">JavaScript</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="project-card">
+                    <div class="project-header">
+                        <div class="project-icon">⏰</div>
+                        <div class="project-links-row">
+                            <a href="https://github.com/theniveshr/SMART-STUDY-REMINDER.git" target="_blank" class="icon-btn" title="GitHub"><i
+                                    class="fab fa-github"></i></a>
+                        </div>
+                    </div>
+                    <div class="project-body">
+                        <h3>Smart Study Reminder</h3>
+                        <p>IoT-based Smart Study Reminder using NodeMCU (ESP8266), tilt sensor, buzzer, and I2C LCD.
+                            Implements automated study–break cycles with real-time posture detection and audio-visual
+                            alerts.</p>
+                        <div class="project-tech">
+                            <span class="tech-tag">IoT</span>
+                            <span class="tech-tag">NodeMCU</span>
+                            <span class="tech-tag">ESP8266</span>
+                            <span class="tech-tag">C++</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="project-card">
+                    <div class="project-header">
+                        <div class="project-icon">🛡️</div>
+                        <div class="project-links-row">
+                            <a href="https://github.com/theniveshr/ReconAI-Pro.git" target="_blank" class="icon-btn" title="GitHub"><i
+                                    class="fab fa-github"></i></a>
+                        </div>
+                    </div>
+                    <div class="project-body">
+                        <h3>ReconAI PRO</h3>
+                        <p>AI-powered bug bounty reconnaissance assistant using the Google Gemini API. Structured
+                            prompts generate vulnerability insights based on OWASP principles with REST APIs and a
+                            responsive frontend.</p>
+                        <div class="project-tech">
+                            <span class="tech-tag">Gemini API</span>
+                            <span class="tech-tag">Node.js</span>
+                            <span class="tech-tag">Express.js</span>
+                            <span class="tech-tag">OWASP</span>
+                        </div>
+                    </div>
+                </div>   
+
+                <div class="project-card">
+    <div class="project-header">
+        <div class="project-icon">⛪</div>
+
+        <div class="project-links-row">
+            <a href="https://github.com/urk23cs1262/stjb_church.git" target="_blank" class="icon-btn"
+                title="GitHub">
+                <i class="fab fa-github"></i>
+            </a>
+
+            <a href="https://stjb-church.vercel.app/" target="_blank" class="icon-btn"
+                title="Live Demo">
+                <i class="fas fa-external-link-alt"></i>
+            </a>
+        </div>
+    </div>
+
+    <div class="project-body">
+        <h3>St. John de Britto Church Website <span style="color:#facc15;">(Currently Developing)</span></h3>
+
+        <p>
+            Developing a modern and responsive Roman Catholic church website with multilingual support,
+            daily Bible readings, saint of the day, donation system, event updates, parish announcements,
+            authentication, and admin management features for the local church community.
+        </p>
+
+        <div class="project-tech">
+            <span class="tech-tag">React.js</span>
+            <span class="tech-tag">Node.js</span>
+            <span class="tech-tag">Express.js</span>
+            <span class="tech-tag">MongoDB</span>
+            <span class="tech-tag">JWT</span>
+            <span class="tech-tag">Vercel</span>
+        </div>
+    </div>
+</div>
+
+
+                <div class="project-card">
+                    <div class="project-header">
+                        <div class="project-icon">🏫</div>
+                        <div class="project-links-row">
+                            <a href="https://github.com/urk23cs1262/school-management-system" target="_blank"
+                                class="icon-btn" title="GitHub"><i class="fab fa-github"></i></a>
+                        </div>
+                    </div>
+                    <div class="project-body">
+                        <h3>School Management System</h3>
+                        <p>Comprehensive PHP-MySQL web application for educational institutions. Streamlines admissions,
+                            course management, and faculty administration with a secure admin dashboard and real-time
+                            updates.</p>
+                        <div class="project-tech">
+                            <span class="tech-tag">PHP</span>
+                            <span class="tech-tag">MySQL</span>
+                            <span class="tech-tag">HTML/CSS</span>
+                            <span class="tech-tag">JavaScript</span>
+                        </div>
+                    </div>
+                </div>                      
+
+            </div>
+        </div>
+    </section>
+
+    <!-- CERTIFICATES -->
+    <section id="certificates">
+        <div class="container">
+            <div class="reveal">
+                <p class="section-label">Achievements</p>
+                <h2 class="section-title">Certificates & <span>Awards</span></h2>
+            </div>
+            <div class="cer-grid">
+                <div class="cer-card reveal" data-cert="assets/img/certificate/g-hacks.png">
+                    <div class="cer-icon">☁️</div>
+                    <div>
+                        <p class="cer-issuer">Google Cloud · Karunya University</p>
+                        <h3>Digital Campus 2.0 on Google Cloud</h3>
+                    </div>
+                    <p>Participated in the Digital Campus 2.0 HackSprint. Developed cloud-based solutions using Google
+                        Cloud services to enhance digital campus experience.<br><small style="color:var(--text2)">ID:
+                            G_K_Hacks_2025_0519</small></p>
+                    <button class="view-cert-btn">
+                        <i class="fas fa-eye"></i> View Certificate
+                    </button>
+                </div>
+
+                <div class="cer-card reveal" data-cert="assets/img/certificate/aws-practitioner.png">
+                    <div class="cer-icon">🎨</div>
+                    <div>
+                        <p class="cer-issuer">AWS · March 2026</p>
+                        <h3>AWS Cloud Practitioner Essentials</h3>
+                    </div>
+                    <p>Foundational knowledge of AWS Cloud platform, including basic global infrastructure, security,
+                        compliance, and core services.</p>
+                    <button class="view-cert-btn">
+                        <i class="fas fa-eye"></i> View Certificate
+                    </button>
+                </div>
+
+                <div class="cer-card reveal" data-cert="assets/img/certificate/oracle-data-science.png">
+                    <div class="cer-icon">📊</div>
+                    <div>
+                        <p class="cer-issuer">Oracle University · Sept 2025</p>
+                        <h3>Oracle Cloud Infrastructure 2025 Data Science</h3>
+                    </div>
+                    <p>Certified Data Science Professional, demonstrating expertise in using OCI Data Science to build,
+                        train, manage, and deploy machine learning models.</p>
+                    <button class="view-cert-btn">
+                        <i class="fas fa-eye"></i> View Certificate
+                    </button>
+                </div>
+
+                <div class="cer-card reveal" data-cert="assets/img/certificate/azure-fundamentals.png">
+                    <div class="cer-icon">🔷</div>
+                    <div>
+                        <p class="cer-issuer">Microsoft · April 2026</p>
+                        <h3>Microsoft Azure Fundamentals</h3>
+                    </div>
+                    <p>Demonstrated foundational knowledge of cloud services and how those services are provided with
+                        Microsoft Azure.</p>
+                    <button class="view-cert-btn">
+                        <i class="fas fa-eye"></i> View Certificate
+                    </button>
+                </div>
+
+                <div class="cer-card reveal" data-cert="assets/img/certificate/cisco-cyber-2025.png">
+                    <div class="cer-icon">🛡️</div>
+                    <div>
+                        <p class="cer-issuer">Cisco · August 2025</p>
+                        <h3>Virtual Internship Program in Cybersecurity</h3>
+                    </div>
+                    <p>Completed the Cisco AICTE Virtual Internship Program, gaining hands-on experience in
+                        cybersecurity principles and Cisco security technologies.</p>
+                    <button class="view-cert-btn">
+                        <i class="fas fa-eye"></i> View Certificate
+                    </button>
+                </div>
+
+                <div class="cer-card reveal" data-cert="assets/img/certificate/cisco-cyber-2024.png">
+                    <div class="cer-icon">🔒</div>
+                    <div>
+                        <p class="cer-issuer">Cisco · July 2024</p>
+                        <h3>Virtual Internship Program in Cybersecurity</h3>
+                    </div>
+                    <p>Participated in the Cisco AICTE Virtual Internship Program focused on developing future-ready
+                        cybersecurity skills and networking fundamentals.</p>
+                    <button class="view-cert-btn">
+                        <i class="fas fa-eye"></i> View Certificate
+                    </button>
+                </div>
+
+                <div class="cer-card reveal" data-cert="assets/img/certificate/microsoft_certificate.png">
+                    <div class="cer-icon">💎</div>
+                    <div>
+                        <p class="cer-issuer">Microsoft · September 2025</p>
+                        <h3>Microsoft Azure Data Fundamentals</h3>
+                    </div>
+                    <p>Successfully completed Azure Data Fundamentals certification, demonstrating foundational
+                        knowledge of core data concepts and Microsoft Azure data services.</p>
+                    <button class="view-cert-btn">
+                        <i class="fas fa-eye"></i> View Certificate
+                    </button>
+                </div>
+
+                <div class="cer-card reveal" data-cert="assets/img/certificate/cisco-ethical-hacker.png">
+                    <div class="cer-icon">💀</div>
+                    <div>
+                        <p class="cer-issuer">Cisco Networking Academy · April 2026</p>
+                        <h3>Ethical Hacker</h3>
+                    </div>
+                    <p>Successfully completed the Ethical Hacker course, covering reconnaissance, attacks, and securing
+                        networks through the Cisco Networking Academy program.</p>
+                    <button class="view-cert-btn">
+                        <i class="fas fa-eye"></i> View Certificate
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CERTIFICATE MODAL -->
+    <div class="cert-modal" id="certModal">
+        <div class="cert-modal-content">
+            <div class="modal-loader" id="certLoader">
+                <i class="fas fa-circle-notch fa-spin"></i>
+            </div>
+            <button class="cert-modal-close" id="closeCertModal">&times;</button>
+            <img id="modalCertImg" src="" alt="Certificate Preview">
+        </div>
+    </div>
+
+    <!-- CONTACT -->
+    <section id="contact">
+        <div class="container">
+            <div class="reveal">
+                <p class="section-label">Let's Connect</p>
+                <h2 class="section-title">Get In <span>Touch</span></h2>
+            </div>
+            <div class="contact-layout">
+                <div class="contact-intro reveal">
+                    <h3>Have a project in mind?</h3>
+                    <p>I'm open to internships, collaboration, and freelance opportunities. Feel free to reach out — I'd
+                        love to connect!</p>
+                    <div class="contact-items">
+                        <div class="contact-item">
+                            <div class="contact-item-icon"><i class="fas fa-envelope"></i></div>
+                            <div class="contact-item-text">
+                                <small>Email</small>
+                                <span>niveshr@karunya.edu.in</span>
+                            </div>
+                        </div>
+                        <div class="contact-item">
+                            <div class="contact-item-icon"><i class="fas fa-phone"></i></div>
+                            <div class="contact-item-text">
+                                <small>Phone</small>
+                                <span>+91 7639520006</span>
+                            </div>
+                        </div>
+                        <div class="contact-item">
+                            <div class="contact-item-icon"><i class="fas fa-map-marker-alt"></i></div>
+                            <div class="contact-item-text">
+                                <small>Location</small>
+                                <span>Kalaiyarkovil, Sivagangai, Tamil Nadu</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="contact-form-wrap reveal">
+                    <form id="contactForm">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Name</label>
+                                <input type="text" id="name" placeholder="Your name" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Email</label>
+                                <input type="email" id="email" placeholder="your@email.com" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Message</label>
+                            <textarea id="message" placeholder="Tell me about your project..." required></textarea>
+                        </div>
+                        <button type="submit" class="submit-btn" id="sendMessageBtn">
+                            <i class="fas fa-paper-plane"></i> Send Message
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer>
+        <div class="container">
+            <div class="footer-inner">
+                <div class="footer-brand">
+                    <div class="logo">NIVESH R</div>
+                    <p>B.Tech CSE student building full-stack apps, AI platforms & IoT systems. Open to opportunities.
+                    </p>
+                    <div class="social-row">
+                        <a href="https://github.com/theniveshr" target="_blank" class="social-btn"><i
+                                class="fab fa-github"></i></a>
+                        <a href="https://www.linkedin.com/in/nivesh-r-4646972b3" target="_blank" class="social-btn"><i
+                                class="fab fa-linkedin"></i></a>
+                        <a href="https://www.instagram.com/______.nivesh_arn.______/?hl=en" target="_blank"
+                            class="social-btn"><i class="fab fa-instagram"></i></a>
+                    </div>
+                </div>
+                <div class="footer-col">
+                    <h4>Navigation</h4>
+                    <ul>
+                        <li><a href="#about">About</a></li>
+                        <li><a href="#education">Education</a></li>
+                        <li><a href="#skills">Skills</a></li>
+                        <li><a href="#projects">Projects</a></li>
+                        <li><a href="#certificates">Certificates</a></li>
+                        <li><a href="#contact">Contact</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4>Highlights</h4>
+                    <ul>
+                        <li><span>💼 8+ Projects Built</span></li>
+                        <li><span>🎓 CGPA: 7.71</span></li>
+                        <li><span>📄 8+ Certifications</span></li>
+                        <li><span>🚀 Full Stack + AI + IoT</span></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2026 Nivesh R · All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- BACK TO TOP -->
+    <button class="back-top" id="backTop" aria-label="Back to top">
+        <i class="fas fa-arrow-up"></i>
+    </button>
+
+    <!-- TOAST -->
+    <div class="toast" id="toast"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+    <script src="JS/script.js"></script>
+</body>
+
+</html>

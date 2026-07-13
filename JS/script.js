@@ -1,0 +1,191 @@
+// ===== EMAILJS =====
+emailjs.init("Tw3LSYbX8-nZodC-t");
+
+// ===== THEME TOGGLE =====
+const html = document.documentElement;
+        const themeBtn = document.getElementById('themeToggle');
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        html.setAttribute('data-theme', savedTheme);
+        themeBtn.innerHTML = savedTheme === 'dark' ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+
+        themeBtn.addEventListener('click', () => {
+            const current = html.getAttribute('data-theme');
+            const next = current === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', next);
+            localStorage.setItem('theme', next);
+            themeBtn.innerHTML = next === 'dark' ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+        });
+
+        // ===== HEADER & PROGRESS BAR =====
+        const header = document.getElementById('header');
+        const progressBar = document.createElement('div');
+        progressBar.className = 'progress-bar';
+        document.body.appendChild(progressBar);
+
+        window.addEventListener('scroll', () => {
+            // Header state
+            header.classList.toggle('scrolled', window.scrollY > 40);
+            document.getElementById('backTop').classList.toggle('show', window.scrollY > 300);
+
+            // Progress Bar
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            progressBar.style.width = scrolled + "%";
+        });
+
+        // ===== MOBILE MENU =====
+        const menuToggle = document.getElementById('menuToggle');
+        const navLinks = document.getElementById('navLinks');
+
+        menuToggle.addEventListener('click', () => {
+            navLinks.classList.toggle('open');
+            menuToggle.classList.toggle('active');
+        });
+
+        navLinks.querySelectorAll('a').forEach(a => {
+            a.addEventListener('click', () => {
+                navLinks.classList.remove('open');
+                menuToggle.classList.remove('active');
+            });
+        });
+
+        // ===== ACTIVE NAV =====
+        const sections = document.querySelectorAll('section[id]');
+        const navLinkEls = document.querySelectorAll('.nav-link');
+
+        window.addEventListener('scroll', () => {
+            let current = '';
+            sections.forEach(s => {
+                if (window.scrollY >= s.offsetTop - 160) current = s.id;
+            });
+            navLinkEls.forEach(a => {
+                a.classList.toggle('active', a.getAttribute('href') === '#' + current);
+            });
+        });
+
+        // ===== TYPEWRITER =====
+        const phrases = ['Full Stack Developer', 'Web Designer', 'Coder', 'Problem Solver', 'AI & ML Enthusiast', 'DevOps Explorer'];
+        let pi = 0, ci = 0, deleting = false;
+        const tw = document.getElementById('typewriter-text');
+
+        function type() {
+            const phrase = phrases[pi];
+            tw.textContent = deleting ? phrase.slice(0, ci--) : phrase.slice(0, ci++);
+            let speed = deleting ? 50 : 100;
+            if (!deleting && ci === phrase.length + 1) { deleting = true; speed = 1400; }
+            else if (deleting && ci < 0) { deleting = false; pi = (pi + 1) % phrases.length; ci = 0; speed = 400; }
+            setTimeout(type, speed);
+        }
+        type();
+
+        // ===== SCROLL REVEAL =====
+        const revealEls = document.querySelectorAll('.reveal, .project-card, .edu-entry');
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach((e, i) => {
+                if (e.isIntersecting) {
+                    setTimeout(() => e.target.classList.add('visible'), i * 80);
+                    observer.unobserve(e.target);
+                }
+            });
+        }, { threshold: 0.12 });
+        revealEls.forEach(el => observer.observe(el));
+
+        // ===== BACK TO TOP =====
+        document.getElementById('backTop').addEventListener('click', () => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+
+        // ===== CONTACT FORM =====
+        document.getElementById('contactForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+            const btn = document.getElementById('sendMessageBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+
+            emailjs.send("service_ay6dt22", "template_r48p4bg", {
+                user_name: document.getElementById("name").value,
+                user_email: document.getElementById("email").value,
+                message: document.getElementById("message").value
+            })
+                .then(() => {
+                    showToast("✅ Message sent successfully!");
+                    this.reset();
+                })
+                .catch(() => {
+                    showToast("❌ Failed to send. Try again.");
+                })
+                .finally(() => {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-paper-plane"></i> Send Message';
+                });
+        });
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 3500);
+        }
+
+        // ===== CERTIFICATE MODAL LOGIC =====
+        const certModal = document.getElementById('certModal');
+        const modalImg = document.getElementById('modalCertImg');
+        const certLoader = document.getElementById('certLoader');
+        const closeCertModal = document.getElementById('closeCertModal');
+        const certBtns = document.querySelectorAll('.view-cert-btn');
+
+        certBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const card = btn.closest('.cer-card');
+                const certPath = card.getAttribute('data-cert');
+                if (certPath) {
+                    // Reset state
+                    modalImg.classList.remove('loaded');
+                    certLoader.style.display = 'block';
+                    
+                    modalImg.src = certPath;
+                    certModal.classList.add('active');
+                    document.body.style.overflow = 'hidden';
+                }
+            });
+        });
+
+        modalImg.onload = () => {
+            certLoader.style.display = 'none';
+            modalImg.classList.add('loaded');
+        };
+
+        const closeModalFunc = () => {
+            certModal.classList.remove('active');
+            document.body.style.overflow = '';
+            setTimeout(() => {
+                modalImg.src = '';
+                modalImg.classList.remove('loaded');
+            }, 400); // Match CSS transition
+        };
+
+        closeCertModal.addEventListener('click', closeModalFunc);
+        certModal.addEventListener('click', (e) => {
+            if (e.target === certModal) closeModalFunc();
+        });
+
+        // Close on Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && certModal.classList.contains('active')) {
+                closeModalFunc();
+            }
+        });
+
+        // ===== COPY EMAIL =====
+        const emailSpan = document.querySelector('.contact-item span');
+        if (emailSpan) {
+            emailSpan.style.cursor = 'copy';
+            emailSpan.title = 'Click to copy email';
+            emailSpan.addEventListener('click', () => {
+                const email = emailSpan.textContent;
+                navigator.clipboard.writeText(email).then(() => {
+                    showToast("📋 Email copied to clipboard!");
+                });
+            });
+        }
