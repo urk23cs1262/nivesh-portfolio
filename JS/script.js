@@ -136,9 +136,14 @@ const html = document.documentElement;
         const certBtns = document.querySelectorAll('.view-cert-btn');
 
         certBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                const card = btn.closest('.cer-card');
-                const certPath = card.getAttribute('data-cert');
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const card = btn.closest('[data-cert]');
+                let certPath = card ? card.getAttribute('data-cert') : null;
+                if (!certPath) {
+                    const innerLink = btn.querySelector('a') || btn.closest('a');
+                    if (innerLink) certPath = innerLink.getAttribute('href');
+                }
                 if (certPath) {
                     // Reset state
                     modalImg.classList.remove('loaded');
@@ -188,4 +193,62 @@ const html = document.documentElement;
                     showToast("📋 Email copied to clipboard!");
                 });
             });
+        }
+
+        // ===== TOGGLE ALL PROJECTS =====
+        const toggleProjectsBtn = document.getElementById('toggleProjectsBtn');
+        const hiddenProjects = document.querySelectorAll('.project-card.hidden-project');
+
+        if (toggleProjectsBtn) {
+            toggleProjectsBtn.addEventListener('click', () => {
+                const isExpanded = toggleProjectsBtn.classList.contains('expanded');
+                if (!isExpanded) {
+                    hiddenProjects.forEach(card => {
+                        card.classList.remove('hidden-project');
+                        setTimeout(() => card.classList.add('visible'), 50);
+                    });
+                    toggleProjectsBtn.classList.add('expanded');
+                    toggleProjectsBtn.innerHTML = 'Show Less <i class="fas fa-chevron-up"></i>';
+                } else {
+                    hiddenProjects.forEach(card => {
+                        card.classList.add('hidden-project');
+                        card.classList.remove('visible');
+                    });
+                    toggleProjectsBtn.classList.remove('expanded');
+                    toggleProjectsBtn.innerHTML = 'View All Projects <i class="fas fa-chevron-down"></i>';
+                    document.getElementById('projects').scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        }
+
+        // ===== TOGGLE ALL CERTIFICATES =====
+        const toggleCertsBtn = document.getElementById('toggleCertsBtn');
+        const hiddenCerts = document.querySelectorAll('.cer-card.hidden-cert');
+
+        if (toggleCertsBtn) {
+            toggleCertsBtn.addEventListener('click', () => {
+                const isExpanded = toggleCertsBtn.classList.contains('expanded');
+                if (!isExpanded) {
+                    hiddenCerts.forEach(card => {
+                        card.classList.remove('hidden-cert');
+                        setTimeout(() => card.classList.add('visible'), 50);
+                    });
+                    toggleCertsBtn.classList.add('expanded');
+                    toggleCertsBtn.innerHTML = 'Show Less <i class="fas fa-chevron-up"></i>';
+                } else {
+                    hiddenCerts.forEach(card => {
+                        card.classList.add('hidden-cert');
+                        card.classList.remove('visible');
+                    });
+                    toggleCertsBtn.classList.remove('expanded');
+                    toggleCertsBtn.innerHTML = 'View All Certificates <i class="fas fa-chevron-down"></i>';
+                    document.getElementById('certificates').scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        }
+
+        // ===== DYNAMIC COPYRIGHT YEAR =====
+        const currentYearEl = document.getElementById('currentYear');
+        if (currentYearEl) {
+            currentYearEl.textContent = new Date().getFullYear();
         }

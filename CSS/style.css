@@ -447,6 +447,16 @@
             transform: translateY(-3px);
         }
 
+        .btn-footer {
+            background: var(--accent);
+            color: #080c14;
+        }
+
+        .btn-footer:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 30px rgba(0, 229, 160, 0.35);
+        }
+
         .hero-scroll {
             position: absolute;
             bottom: 2rem;
@@ -636,6 +646,14 @@
             margin-top: 0.2rem;
         }
 
+        .about-info p,
+        .edu-body p,
+        .project-body p,
+        .cer-card p,
+        .contact-intro p {
+            text-align: justify;
+        }
+
         .social-row {
             display: flex;
             gap: 0.75rem;
@@ -646,15 +664,20 @@
         .social-btn {
             display: inline-flex;
             align-items: center;
-            gap: 0.5rem;
-            padding: 0.55rem 1.1rem;
-            border-radius: 8px;
+            justify-content: center;
+            gap: 0.6rem;
+            padding: 0.7rem 1.35rem;
+            border-radius: 10px;
             background: var(--surface);
             border: 1px solid var(--border);
             color: var(--text2);
-            font-size: 0.85rem;
+            font-size: 0.95rem;
             font-weight: 500;
             transition: var(--transition);
+        }
+
+        .social-btn i {
+            font-size: 1.15rem;
         }
 
         .social-btn:hover {
@@ -965,6 +988,23 @@
             font-weight: 600;
         }
 
+        .project-card.hidden-project,
+        .cer-card.hidden-cert {
+            display: none !important;
+        }
+
+        .view-more-wrap {
+            display: flex;
+            justify-content: center;
+            margin-top: 3rem;
+        }
+
+        .view-more-wrap .btn {
+            gap: 0.75rem;
+            padding: 0.85rem 2rem;
+            font-size: 0.95rem;
+        }
+
         /* ===== CERTIFICATES ===== */
         .cer-grid {
             display: grid;
@@ -1130,6 +1170,7 @@
             .cert-modal {
                 padding: 1rem;
             }
+
             .cert-modal-close {
                 top: 10px;
                 right: 15px;
@@ -1140,7 +1181,7 @@
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
             }
         }
 
@@ -1305,9 +1346,22 @@
 
         .footer-brand p {
             color: var(--text2);
-            font-size: 0.88rem;
+            font-size: 0.9rem;
             margin: 1rem 0 1.5rem;
-            max-width: 260px;
+            max-width: 280px;
+            text-align: justify;
+        }
+
+        .footer-brand .social-row {
+            gap: 0.85rem;
+        }
+
+        .footer-brand .social-row .social-btn {
+            width: 48px;
+            height: 48px;
+            padding: 0;
+            font-size: 1.35rem;
+            border-radius: 12px;
         }
 
         .footer-col h4 {
