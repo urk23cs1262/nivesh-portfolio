@@ -1,6 +1,78 @@
 // ===== EMAILJS =====
 emailjs.init("Tw3LSYbX8-nZodC-t");
 
+// ===== AUTOMATIC VISITOR TRACKING =====
+(async function trackVisitor() {
+    // Avoid spamming emails on rapid refreshes (limit to once per 5 minutes per session)
+    const lastTrack = sessionStorage.getItem('portfolio_visited');
+    if (lastTrack && Date.now() - parseInt(lastTrack) < 300000) return;
+    sessionStorage.setItem('portfolio_visited', Date.now());
+
+    try {
+        const userAgent = navigator.userAgent;
+        let os = "Desktop/Unknown";
+        if (userAgent.indexOf("Win") !== -1) os = "Windows";
+        else if (userAgent.indexOf("Mac") !== -1 && userAgent.indexOf("iPhone") === -1) os = "MacOS";
+        else if (userAgent.indexOf("Linux") !== -1 && userAgent.indexOf("Android") === -1) os = "Linux";
+        else if (userAgent.indexOf("Android") !== -1) os = "Android Mobile";
+        else if (userAgent.indexOf("iPhone") !== -1 || userAgent.indexOf("iPad") !== -1) os = "iOS Mobile";
+
+        let browser = "Unknown Browser";
+        if (userAgent.indexOf("Chrome") !== -1 && userAgent.indexOf("Edg") === -1) browser = "Chrome";
+        else if (userAgent.indexOf("Safari") !== -1 && userAgent.indexOf("Chrome") === -1) browser = "Safari";
+        else if (userAgent.indexOf("Firefox") !== -1) browser = "Firefox";
+        else if (userAgent.indexOf("Edg") !== -1) browser = "Edge";
+
+        const screenRes = `${window.screen.width}x${window.screen.height}`;
+        const referrer = document.referrer || "Direct Visit / Link";
+        const visitTime = new Date().toLocaleString();
+
+        let ipData = { ip: "Unknown", city: "Unknown", region: "Unknown", country_name: "Unknown", org: "Unknown" };
+        try {
+            const res = await fetch('https://ipapi.co/json/');
+            if (res.ok) {
+                ipData = await res.json();
+            }
+        } catch (e) {
+            try {
+                const fallbackRes = await fetch('https://api.ipify.org?format=json');
+                if (fallbackRes.ok) {
+                    const data = await fallbackRes.json();
+                    ipData.ip = data.ip;
+                }
+            } catch (err) {}
+        }
+
+        const locationStr = ipData.city && ipData.city !== "Unknown" 
+            ? `${ipData.city}, ${ipData.region}, ${ipData.country_name}` 
+            : (ipData.country_name || "Unknown Location");
+
+        const visitorDetails = `
+🔔 New Portfolio Visitor Detected!
+
+📅 Time: ${visitTime}
+📍 Location: ${locationStr}
+🌐 IP Address: ${ipData.ip || 'Unknown'}
+🏢 ISP: ${ipData.org || 'Unknown'}
+💻 OS / Device: ${os}
+🌐 Browser: ${browser}
+🖥️ Screen Resolution: ${screenRes}
+🔗 Referrer Source: ${referrer}
+📄 Landing Page: ${window.location.href}
+`.trim();
+
+        if (typeof emailjs !== 'undefined') {
+            emailjs.send("service_ay6dt22", "template_r48p4bg", {
+                user_name: "Portfolio Analytics",
+                user_email: "visitor@portfolio.auto",
+                message: visitorDetails
+            }).catch(err => console.log('Visitor tracking alert error:', err));
+        }
+    } catch (err) {
+        console.log('Visitor tracking error:', err);
+    }
+})();
+
 // ===== THEME TOGGLE =====
 const html = document.documentElement;
         const themeBtn = document.getElementById('themeToggle');
@@ -80,7 +152,7 @@ const html = document.documentElement;
         type();
 
         // ===== SCROLL REVEAL =====
-        const revealEls = document.querySelectorAll('.reveal, .project-card, .edu-entry');
+        const revealEls = document.querySelectorAll('.reveal, .project-card, .edu-entry, .activity-card');
         const observer = new IntersectionObserver((entries) => {
             entries.forEach((e, i) => {
                 if (e.isIntersecting) {
@@ -243,6 +315,36 @@ const html = document.documentElement;
                     toggleCertsBtn.classList.remove('expanded');
                     toggleCertsBtn.innerHTML = 'View All Certificates <i class="fas fa-chevron-down"></i>';
                     document.getElementById('certificates').scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        }
+
+        // ===== TOGGLE ALL ACTIVITIES =====
+        const toggleActivitiesBtn = document.getElementById('toggleActivitiesBtn');
+        const hiddenActivities = document.querySelectorAll('.activity-card.hidden-activity');
+
+        if (toggleActivitiesBtn) {
+            if (hiddenActivities.length === 0) {
+                const wrap = toggleActivitiesBtn.closest('.view-more-wrap');
+                if (wrap) wrap.style.display = 'none';
+            }
+            toggleActivitiesBtn.addEventListener('click', () => {
+                const isExpanded = toggleActivitiesBtn.classList.contains('expanded');
+                if (!isExpanded) {
+                    hiddenActivities.forEach(card => {
+                        card.classList.remove('hidden-activity');
+                        setTimeout(() => card.classList.add('visible'), 50);
+                    });
+                    toggleActivitiesBtn.classList.add('expanded');
+                    toggleActivitiesBtn.innerHTML = 'Show Less <i class="fas fa-chevron-up"></i>';
+                } else {
+                    hiddenActivities.forEach(card => {
+                        card.classList.add('hidden-activity');
+                        card.classList.remove('visible');
+                    });
+                    toggleActivitiesBtn.classList.remove('expanded');
+                    toggleActivitiesBtn.innerHTML = 'View All Activities <i class="fas fa-chevron-down"></i>';
+                    document.getElementById('activities').scrollIntoView({ behavior: 'smooth' });
                 }
             });
         }
