@@ -267,6 +267,7 @@
           "github_url": "https://github.com/theniveshr/NeuroHire.git",
           "live_demo_url": "",
           "image_url": "",
+          "images": [],
           "technologies": [
             "Next.js",
             "FastAPI",
@@ -290,6 +291,7 @@
           "github_url": "https://github.com/urk23cs1262/stjb_church.git",
           "live_demo_url": "https://st-jb-church.vercel.app",
           "image_url": "",
+          "images": [],
           "technologies": [
             "React.js",
             "Node.js",
@@ -314,6 +316,7 @@
           "github_url": "https://github.com/theniveshr/SMART-TAG.git",
           "live_demo_url": "",
           "image_url": "",
+          "images": [],
           "technologies": [
             "YOLO",
             "PaddleOCR",
@@ -337,6 +340,7 @@
           "github_url": "https://github.com/theniveshr/CareerArc.git",
           "live_demo_url": "",
           "image_url": "",
+          "images": [],
           "technologies": [
             "React",
             "Node.js",
@@ -360,6 +364,7 @@
           "github_url": "https://github.com/theniveshr/HydroWatch.git",
           "live_demo_url": "",
           "image_url": "",
+          "images": [],
           "technologies": [
             "FastAPI",
             "Python",

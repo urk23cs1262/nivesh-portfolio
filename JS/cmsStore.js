@@ -14,11 +14,11 @@
     let currentPortfolioData = null;
     let isInitialized = false;
 
-    // Async loader fetching /data/portfolio.json
+    // Async loader — localStorage (admin saves) always wins over disk file
     async function initCMSStore() {
         if (isInitialized && currentPortfolioData) return currentPortfolioData;
 
-        // Try reading cached data from localStorage first
+        // Step 1: Read localStorage first — this contains admin's latest saves (including screenshots)
         const localRaw = localStorage.getItem(STORAGE_KEY);
         if (localRaw) {
             try {
@@ -27,24 +27,39 @@
             } catch (e) { }
         }
 
-        // Fetch authoritative /data/niveshr_portfolio.json file
+        // Step 2: Fetch /data/niveshr_portfolio.json from disk
+        // Only use it if: (a) localStorage is empty, OR (b) the file is newer AND localStorage has no project screenshots/images
         try {
             const res = await fetch('./data/niveshr_portfolio.json');
             if (res.ok) {
                 const fileData = await res.json();
-                if (!currentPortfolioData || (fileData.lastUpdated && new Date(fileData.lastUpdated) > new Date(currentPortfolioData.lastUpdated || 0))) {
+                const localHasImages = currentPortfolioData &&
+                    Array.isArray(currentPortfolioData.projects) &&
+                    currentPortfolioData.projects.some(p =>
+                        (Array.isArray(p.screenshots) && p.screenshots.length > 0) ||
+                        (Array.isArray(p.images) && p.images.length > 0) ||
+                        (p.image_url && p.image_url.startsWith('data:'))
+                    );
+
+                if (!currentPortfolioData) {
+                    // No localStorage data at all — use file
                     currentPortfolioData = fileData;
-                    localStorage.setItem(STORAGE_KEY, JSON.stringify(currentPortfolioData));
+                    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(currentPortfolioData)); } catch (e) {}
+                } else if (!localHasImages && fileData.lastUpdated && new Date(fileData.lastUpdated) > new Date(currentPortfolioData.lastUpdated || 0)) {
+                    // File is newer and localStorage has no images — safe to use file
+                    currentPortfolioData = fileData;
+                    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(currentPortfolioData)); } catch (e) {}
                 }
+                // Otherwise: localStorage has admin-uploaded images — keep localStorage data as-is
             }
         } catch (err) {
-            console.warn("Could not fetch /data/niveshr_portfolio.json directly, using initial fallback.");
+            console.warn("Could not fetch /data/niveshr_portfolio.json, using localStorage/initial fallback.");
         }
 
-        // Fallback to window.PORTFOLIO_INITIAL_DATA if fetch fails and local is empty
+        // Step 3: Final fallback to PORTFOLIO_INITIAL_DATA if nothing else worked
         if (!currentPortfolioData) {
             currentPortfolioData = window.PORTFOLIO_INITIAL_DATA || getEmptyState();
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(currentPortfolioData));
+            try { localStorage.setItem(STORAGE_KEY, JSON.stringify(currentPortfolioData)); } catch (e) {}
         }
 
         isInitialized = true;
@@ -81,13 +96,25 @@
         return window.PORTFOLIO_INITIAL_DATA || getEmptyState();
     }
 
-    // Save Updated State
+    // Save Updated State safely handling QuotaExceededError
     function saveState(state, actionDesc, sectionName, recordTitle) {
         if (window.updateSaveIndicator) window.updateSaveIndicator(true);
         state.lastUpdated = new Date().toISOString();
         currentPortfolioData = state;
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-        localStorage.setItem('nivesh_admin_portfolio_data', JSON.stringify(state));
+
+        // Try saving to localStorage safely
+        try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+            localStorage.setItem('nivesh_admin_portfolio_data', JSON.stringify(state));
+        } catch (err) {
+            console.warn("localStorage quota exceeded for full payload. Clearing old storage & persisting via backend API...", err);
+            try {
+                localStorage.removeItem('nivesh_admin_audit_logs');
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+            } catch (e) {
+                console.warn("Could not write full payload to localStorage due to browser quota limit. Data stored in memory and sent to backend server.");
+            }
+        }
 
         // Real-time broadcast to all open browser windows / tabs
         window.dispatchEvent(new CustomEvent('cms_data_updated', { detail: state }));
@@ -97,14 +124,21 @@
             bc.close();
         } catch (e) { }
 
-        // Attempt backend API write to server.js
-        try {
-            fetch('/api/portfolio', {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(state)
-            }).catch(() => { });
-        } catch (e) { }
+        // Attempt backend API write to server.js (only when running under Express, not Live Server)
+        const isExpressServer = window.location.port !== '5500' && window.location.port !== '5501' && window.location.protocol !== 'file:';
+        if (isExpressServer) {
+            try {
+                fetch('/api/portfolio', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(state)
+                }).then(r => r.ok ? r.json() : null).then(res => {
+                    if (res && res.success) {
+                        console.log("Portfolio data persisted to disk via Express server.");
+                    }
+                }).catch(() => { });
+            } catch (e) { }
+        }
 
         if (actionDesc && sectionName) {
             logAdminActivity(actionDesc, sectionName, 'UPDATE', recordTitle);

@@ -83,8 +83,8 @@
     // =========================================================================
     //  CENTRALIZED AUTHENTICATION STATE MACHINE
     // =========================================================================
-    const AUTH_TOKEN_KEY  = 'nivesh_admin_auth_token';
-    const AUTH_TOKEN_VAL  = 'authenticated';
+    const AUTH_TOKEN_KEY = 'nivesh_admin_auth_token';
+    const AUTH_TOKEN_VAL = 'authenticated';
     const AUTH_LOGOUT_KEY = 'nivesh_admin_logout_signal'; // cross-tab signal
 
     /** Single truth: is the current session authenticated? */
@@ -94,12 +94,12 @@
 
     /** Show the login screen and hide the admin dashboard */
     function showAdminLogin() {
-        const overlay     = document.getElementById('authOverlay');
-        const app         = document.getElementById('adminApp');
+        const overlay = document.getElementById('authOverlay');
+        const app = document.getElementById('adminApp');
         const logoutModal = document.getElementById('logoutConfirmModal');
-        const authAlert   = document.getElementById('authAlert');
-        const pwdInput    = document.getElementById('adminPassword');
-        const pinInput    = document.getElementById('adminPin');
+        const authAlert = document.getElementById('authAlert');
+        const pwdInput = document.getElementById('adminPassword');
+        const pinInput = document.getElementById('adminPin');
 
         // Close logout modal
         if (logoutModal) { logoutModal.classList.remove('active'); logoutModal.style.display = 'none'; }
@@ -108,7 +108,7 @@
         if (pinInput) pinInput.value = '';
         if (authAlert) authAlert.style.display = 'none';
         // Swap UI
-        if (app)     app.style.display = 'none';
+        if (app) app.style.display = 'none';
         if (overlay) { overlay.style.display = 'flex'; overlay.classList.remove('hidden'); }
         // Replace history so Back cannot restore the dashboard
         history.replaceState({ adminView: 'login' }, '', window.location.href);
@@ -117,9 +117,9 @@
     /** Show the admin dashboard and hide the login screen */
     function showAdminDashboard() {
         const overlay = document.getElementById('authOverlay');
-        const app     = document.getElementById('adminApp');
+        const app = document.getElementById('adminApp');
         if (overlay) { overlay.style.display = 'none'; overlay.classList.add('hidden'); }
-        if (app)     app.style.display = 'flex';
+        if (app) app.style.display = 'flex';
         // Push history state so popstate handler can detect dashboard
         history.pushState({ adminView: 'dashboard' }, '', window.location.href);
         // Initialize dashboard data every time we enter the dashboard
@@ -183,15 +183,15 @@
             const pin = pinInput ? pinInput.value.trim() : '';
 
             // Alert elements
-            const alertEl    = document.getElementById('authAlert');
+            const alertEl = document.getElementById('authAlert');
             const alertTitle = document.getElementById('authAlertTitle');
-            const alertText  = document.getElementById('authAlertText');
-            const alertIcon  = document.getElementById('authAlertIcon');
+            const alertText = document.getElementById('authAlertText');
+            const alertIcon = document.getElementById('authAlertIcon');
 
             // Per-field inline error elements
-            const pwdError     = document.getElementById('pwdError');
+            const pwdError = document.getElementById('pwdError');
             const pwdErrorText = document.getElementById('pwdErrorText');
-            const pinError     = document.getElementById('pinError');
+            const pinError = document.getElementById('pinError');
             const pinErrorText = document.getElementById('pinErrorText');
 
             // --- Helper: show main alert banner ---
@@ -201,8 +201,8 @@
                     alertEl.className = isWarning ? 'auth-alert warning' : 'auth-alert error';
                 }
                 if (alertTitle) alertTitle.textContent = title;
-                if (alertText)  alertText.textContent  = detail;
-                if (alertIcon)  alertIcon.className = isWarning ? 'fas fa-exclamation-triangle' : 'fas fa-times-circle';
+                if (alertText) alertText.textContent = detail;
+                if (alertIcon) alertIcon.className = isWarning ? 'fas fa-exclamation-triangle' : 'fas fa-times-circle';
             };
 
             const hideAlert = () => {
@@ -211,8 +211,8 @@
 
             // --- Helper: show / clear per-field inline errors ---
             const showFieldError = (field, msgEl, msgTextEl, message) => {
-                if (field)    field.classList.add('is-invalid');
-                if (msgEl)    msgEl.style.display = 'flex';
+                if (field) field.classList.add('is-invalid');
+                if (msgEl) msgEl.style.display = 'flex';
                 if (msgTextEl) msgTextEl.textContent = message;
             };
 
@@ -248,12 +248,12 @@
             }
 
             // ── 3. Credential validation ─────────────────────────────────────
-            const env      = window.ENV || {};
-            const validPwd = env.ADMIN_PASSWORD || 'niveshARN@12';
-            const validPin = env.ADMIN_PIN || '112520';
+            const env = window.ENV || {};
+            const validPwd = env.ADMIN_PASSWORD || '';
+            const validPin = env.ADMIN_PIN || '';
 
-            const isPwdValid = (pwd === validPwd || pwd === 'niveshARN@12' || pwd === 'nivesh@admin2026');
-            const isPinValid = (pin === validPin || pin === '112520');
+            const isPwdValid = (pwd === validPwd || pwd === '' || pwd === '');
+            const isPinValid = (pin === validPin || pin === '');
 
             if (isPwdValid && isPinValid) {
                 // ── SUCCESS ──────────────────────────────────────────────────
@@ -266,7 +266,7 @@
                 clearFieldErrors();
                 showAdminDashboard();
                 switchTab('dashboard');
-                showAdminToast('Welcome back! Redirected to Admin Dashboard.');
+                showAdminToast('Welcome back! NIVEN.');
             } else {
                 // ── WRONG CREDENTIALS ────────────────────────────────────────
                 if (window.CMS_STORE) window.CMS_STORE.logSecurityEvent('FAILED_LOGIN', '127.0.0.1', 'FAILURE');
@@ -1118,14 +1118,14 @@
                 </div>
                 <div class="cms-skill-tags-wrap" style="display: flex; flex-wrap: wrap; gap: 8px;">
                     ${(cat.skills || []).map((skill, sIdx) => {
-                        const skillName = typeof skill === 'string' ? skill : skill.name;
-                        return `
+            const skillName = typeof skill === 'string' ? skill : skill.name;
+            return `
                             <span class="skill-tag" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-full); font-size: 0.85rem; transition: var(--transition);">
                                 <span>${skillName}</span>
                                 <i class="fas fa-times" onclick="window.removeSkill(${catIdx}, ${sIdx});" title="Remove skill" style="color: var(--text-muted); cursor: pointer; margin-left: 2px;"></i>
                             </span>
                         `;
-                    }).join('')}
+        }).join('')}
                 </div>
             </div>
         `).join('');
@@ -1374,21 +1374,69 @@
         `).join('');
     }
 
-    function updateProjectImagePreview(url) {
-        const imgPreview = document.getElementById('projectImgPreview');
-        const imgFallback = document.getElementById('projectImgFallback');
-        if (!imgPreview || !imgFallback) return;
+    let currentProjectImages = [];
 
-        if (url && url.trim() !== '') {
-            imgPreview.src = url;
-            imgPreview.style.display = 'block';
-            imgFallback.style.display = 'none';
-        } else {
-            imgPreview.src = '';
-            imgPreview.style.display = 'none';
-            imgFallback.style.display = 'flex';
-        }
+    // Helper: Compress and resize Base64 images to prevent localStorage QuotaExceededError
+    function compressImage(dataUrl, maxWidth = 1200, quality = 0.82) {
+        return new Promise((resolve) => {
+            if (!dataUrl || !dataUrl.startsWith('data:image/')) {
+                return resolve(dataUrl);
+            }
+            const img = new Image();
+            img.onload = function () {
+                let width = img.width;
+                let height = img.height;
+
+                if (width > maxWidth) {
+                    height = Math.round((height * maxWidth) / width);
+                    width = maxWidth;
+                }
+
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+
+                const compressed = canvas.toDataURL('image/jpeg', quality);
+                resolve(compressed);
+            };
+            img.onerror = function () {
+                resolve(dataUrl);
+            };
+            img.src = dataUrl;
+        });
     }
+
+    function renderProjectImagesPreview() {
+        const listEl = document.getElementById('projectImagesList');
+        const badgeEl = document.getElementById('projectImagesCountBadge');
+        if (badgeEl) badgeEl.textContent = `${currentProjectImages.length} Image${currentProjectImages.length === 1 ? '' : 's'}`;
+
+        if (!listEl) return;
+
+        if (currentProjectImages.length === 0) {
+            listEl.innerHTML = '<div style="color: var(--text-muted); font-size: 0.85rem; width: 100%; text-align: center; padding: 10px;">No images uploaded yet. Click "Upload Image(s)" or paste a URL above.</div>';
+            return;
+        }
+
+        listEl.innerHTML = currentProjectImages.map((imgUrl, i) => `
+            <div style="position: relative; width: 80px; height: 80px; border-radius: 8px; overflow: hidden; border: 2px solid var(--border-color); background: var(--bg-card); flex-shrink: 0; box-shadow: var(--shadow-sm);">
+                <img src="${imgUrl}" alt="Screenshot ${i+1}" style="width: 100%; height: 100%; object-fit: cover;">
+                <span style="position: absolute; bottom: 2px; left: 2px; background: rgba(0,0,0,0.7); color: #fff; font-size: 0.65rem; padding: 1px 5px; border-radius: 4px; font-weight: 700;">#${i+1}</span>
+                <button type="button" onclick="window.removeProjectImageAt(${i})" style="position: absolute; top: 2px; right: 2px; background: #ef4444; color: #fff; border: none; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; cursor: pointer; line-height: 1; box-shadow: 0 2px 4px rgba(0,0,0,0.3);" title="Remove this screenshot">&times;</button>
+            </div>
+        `).join('');
+    }
+
+    window.removeProjectImageAt = function (index) {
+        if (index >= 0 && index < currentProjectImages.length) {
+            currentProjectImages.splice(index, 1);
+            renderProjectImagesPreview();
+            showAdminToast("Removed image screenshot");
+        }
+    };
 
     function closeProjectModal() {
         const modal = document.getElementById('projectModal');
@@ -1427,7 +1475,7 @@
             if (demoInput) demoInput.value = '';
             if (techInput) techInput.value = '';
             if (imageInput) imageInput.value = '';
-            updateProjectImagePreview('');
+            currentProjectImages = [];
         } else {
             const state = window.CMS_STORE.getState();
             const proj = state.projects[idx];
@@ -1442,10 +1490,21 @@
             if (githubInput) githubInput.value = proj.github_url || '';
             if (demoInput) demoInput.value = proj.live_demo_url || '';
             if (techInput) techInput.value = (proj.technologies || []).join(', ');
-            if (imageInput) imageInput.value = proj.image_url || '';
-            updateProjectImagePreview(proj.image_url || '');
+            if (imageInput) imageInput.value = '';
+
+            if (Array.isArray(proj.screenshots) && proj.screenshots.length > 0) {
+                currentProjectImages = [...proj.screenshots];
+            } else if (Array.isArray(proj.images) && proj.images.length > 0) {
+                // Migrate legacy images field
+                currentProjectImages = [...proj.images];
+            } else if (proj.image_url) {
+                currentProjectImages = [proj.image_url];
+            } else {
+                currentProjectImages = [];
+            }
         }
 
+        renderProjectImagesPreview();
         modal.style.display = 'flex';
         modal.classList.add('active');
     };
@@ -1457,7 +1516,8 @@
         const form = document.getElementById('projectForm');
         const imageInput = document.getElementById('projectImageInput');
         const imgFileInput = document.getElementById('projectImgFileInput');
-        const removeImgBtn = document.getElementById('projectRemoveImgBtn');
+        const addUrlBtn = document.getElementById('projectAddUrlBtn');
+        const clearAllImgsBtn = document.getElementById('projectClearAllImgsBtn');
 
         if (closeBtn) closeBtn.onclick = closeProjectModal;
         if (cancelBtn) cancelBtn.onclick = closeProjectModal;
@@ -1469,31 +1529,75 @@
         }
 
         if (imageInput) {
-            imageInput.oninput = function () {
-                updateProjectImagePreview(this.value);
+            const handleUrlInput = async function () {
+                const val = imageInput.value.trim();
+                if (val && (val.startsWith('http://') || val.startsWith('https://') || val.startsWith('data:image/') || val.startsWith('./') || val.startsWith('/'))) {
+                    let compressedVal = val;
+                    if (val.startsWith('data:image/')) {
+                        compressedVal = await compressImage(val, 1200, 0.82);
+                    }
+                    if (!currentProjectImages.includes(compressedVal)) {
+                        currentProjectImages.push(compressedVal);
+                        imageInput.value = '';
+                        renderProjectImagesPreview();
+                        showAdminToast("Added image preview!");
+                    }
+                }
+            };
+            imageInput.onchange = handleUrlInput;
+            imageInput.onpaste = function () {
+                setTimeout(handleUrlInput, 100);
+            };
+        }
+
+        if (addUrlBtn) {
+            addUrlBtn.onclick = async function () {
+                const url = imageInput ? imageInput.value.trim() : '';
+                if (!url) {
+                    showAdminToast("Please enter or paste an image URL first", "error");
+                    return;
+                }
+                let compressedUrl = url;
+                if (url.startsWith('data:image/')) {
+                    compressedUrl = await compressImage(url, 1200, 0.82);
+                }
+                currentProjectImages.push(compressedUrl);
+                if (imageInput) imageInput.value = '';
+                renderProjectImagesPreview();
+                showAdminToast("Added image URL!");
+            };
+        }
+
+        if (clearAllImgsBtn) {
+            clearAllImgsBtn.onclick = function () {
+                if (currentProjectImages.length === 0) return;
+                currentProjectImages = [];
+                renderProjectImagesPreview();
+                showAdminToast("Cleared all images!");
             };
         }
 
         if (imgFileInput) {
             imgFileInput.onchange = function (e) {
-                const file = e.target.files[0];
-                if (!file) return;
-                const reader = new FileReader();
-                reader.onload = function (evt) {
-                    const dataUrl = evt.target.result;
-                    if (imageInput) imageInput.value = dataUrl;
-                    updateProjectImagePreview(dataUrl);
-                    showAdminToast("Project image uploaded!");
-                };
-                reader.readAsDataURL(file);
-            };
-        }
+                const files = Array.from(e.target.files || []);
+                if (files.length === 0) return;
 
-        if (removeImgBtn) {
-            removeImgBtn.onclick = function () {
-                if (imageInput) imageInput.value = '';
-                updateProjectImagePreview('');
-                showAdminToast("Project image removed!");
+                let loadedCount = 0;
+                files.forEach(file => {
+                    const reader = new FileReader();
+                    reader.onload = async function (evt) {
+                        const rawDataUrl = evt.target.result;
+                        const compressedDataUrl = await compressImage(rawDataUrl, 1200, 0.82);
+                        currentProjectImages.push(compressedDataUrl);
+                        loadedCount++;
+                        if (loadedCount === files.length) {
+                            renderProjectImagesPreview();
+                            showAdminToast(`Uploaded & optimized ${files.length} image(s)!`);
+                            imgFileInput.value = '';
+                        }
+                    };
+                    reader.readAsDataURL(file);
+                });
             };
         }
 
@@ -1509,9 +1613,9 @@
                 const github = document.getElementById('projectGithubInput').value.trim();
                 const demo = document.getElementById('projectDemoInput').value.trim();
                 const techStr = document.getElementById('projectTechInput').value.trim();
-                const imageUrl = document.getElementById('projectImageInput').value.trim();
 
                 const techArr = techStr ? techStr.split(',').map(t => t.trim()).filter(Boolean) : [];
+                const firstImgUrl = currentProjectImages.length > 0 ? currentProjectImages[0] : '';
 
                 const state = window.CMS_STORE.getState();
 
@@ -1525,7 +1629,9 @@
                         long_description: longDesc,
                         github_url: github,
                         live_demo_url: demo,
-                        image_url: imageUrl,
+                        image_url: currentProjectImages.length > 0 ? currentProjectImages[0] : '',
+                        screenshots: [...currentProjectImages],
+                        images: [...currentProjectImages],
                         technologies: techArr,
                         display_order: state.projects.length + 1,
                         is_active: true,
@@ -1542,7 +1648,9 @@
                     state.projects[idx].long_description = longDesc;
                     state.projects[idx].github_url = github;
                     state.projects[idx].live_demo_url = demo;
-                    state.projects[idx].image_url = imageUrl;
+                    state.projects[idx].image_url = currentProjectImages.length > 0 ? currentProjectImages[0] : '';
+                    state.projects[idx].screenshots = [...currentProjectImages];
+                    state.projects[idx].images = [...currentProjectImages];
                     state.projects[idx].technologies = techArr;
 
                     window.CMS_STORE.saveState(state, "Updated Project: " + name, "Projects", name);
@@ -1889,7 +1997,7 @@
 
         let filtered = currentAuditLogs.filter(l => {
             const matchesCat = (selectedCat === 'ALL') || (l.section && l.section.toLowerCase() === selectedCat.toLowerCase());
-            const matchesQuery = !query || 
+            const matchesQuery = !query ||
                 (l.action && l.action.toLowerCase().includes(query)) ||
                 (l.section && l.section.toLowerCase().includes(query)) ||
                 (l.recordTitle && l.recordTitle.toLowerCase().includes(query)) ||

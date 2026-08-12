@@ -843,6 +843,47 @@
         </div>
     </div>
 
+    <!-- PROJECT GALLERY MODAL (SCREENSHOTS LIGHTBOX) -->
+    <div class="project-gallery-modal" id="projectGalleryModal" role="dialog" aria-modal="true" aria-hidden="true" aria-label="Project Screenshots Gallery">
+        <div class="gallery-modal-content">
+            <!-- Close Button -->
+            <button type="button" class="gallery-modal-close" id="closeGalleryModal" aria-label="Close gallery">&times;</button>
+
+            <!-- Header -->
+            <div class="gallery-header">
+                <h3 id="galleryProjectTitle"><i class="fas fa-images"></i> Project Screenshots</h3>
+                <span class="gallery-counter" id="galleryCounter">1 / 1</span>
+            </div>
+
+            <!-- Main Image Viewer -->
+            <div class="gallery-main-view">
+                <!-- Side Arrow: Previous -->
+                <button type="button" class="gallery-side-arrow left" id="gallerySidePrevBtn" title="Previous Image" aria-label="Previous image">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+
+                <!-- Image -->
+                <img id="galleryMainImg" src="" alt="Project Screenshot">
+
+                <!-- Image Error Fallback -->
+                <div id="galleryImgError" class="gallery-img-error" style="display:none;">
+                    <i class="fas fa-image"></i>
+                    <span>Image unavailable</span>
+                </div>
+
+                <!-- Side Arrow: Next -->
+                <button type="button" class="gallery-side-arrow right" id="gallerySideNextBtn" title="Next Image" aria-label="Next image">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+
+            <!-- Thumbnail Strip -->
+            <div class="gallery-thumbs-bar">
+                <div class="gallery-thumbs-strip" id="galleryThumbsStrip"></div>
+            </div>
+        </div>
+    </div>
+
     <!-- CONTACT -->
     <section id="contact">
         <div class="container">
