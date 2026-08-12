@@ -656,7 +656,8 @@
 
         .social-row {
             display: flex;
-            gap: 0.75rem;
+            align-items: center;
+            gap: 0.5rem;
             margin-top: 1.5rem;
             flex-wrap: wrap;
         }
@@ -665,19 +666,26 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            gap: 0.6rem;
-            padding: 0.7rem 1.35rem;
+            gap: 0.45rem;
+            padding: 0.6rem 0.95rem;
             border-radius: 10px;
             background: var(--surface);
             border: 1px solid var(--border);
             color: var(--text2);
-            font-size: 0.95rem;
+            font-size: 0.88rem;
             font-weight: 500;
             transition: var(--transition);
+            white-space: nowrap;
+        }
+
+        button.social-btn {
+            cursor: pointer;
+            font-family: inherit;
+            outline: none;
         }
 
         .social-btn i {
-            font-size: 1.15rem;
+            font-size: 1.05rem;
         }
 
         .social-btn:hover {
@@ -685,6 +693,12 @@
             color: var(--accent);
             background: var(--surface-hover);
             transform: translateY(-3px);
+        }
+
+        button.copy-email-btn.copied {
+            border-color: var(--accent);
+            background: rgba(6, 182, 212, 0.15);
+            color: var(--accent);
         }
 
         /* ===== EDUCATION ===== */
@@ -1514,6 +1528,13 @@
             padding-left: 4px;
         }
 
+        .footer-col ul li a.admin-link:hover,
+        .footer-col ul li a[href="admin.html"]:hover,
+        .admin-link:hover {
+            color: #2563eb !important;
+            padding-left: 4px;
+        }
+
         .footer-col ul li span {
             font-size: 0.88rem;
             color: var(--text2);
@@ -1566,17 +1587,18 @@
             position: fixed;
             bottom: 5.5rem;
             right: 2rem;
-            background: var(--bg3);
+            background: #ffffff;
             border: 1px solid var(--accent);
-            color: var(--text);
+            color: #000000 !important;
             padding: 0.85rem 1.4rem;
             border-radius: 10px;
             font-size: 0.88rem;
-            font-weight: 500;
+            font-weight: 600;
             opacity: 0;
             transform: translateY(10px);
             transition: var(--transition);
             z-index: 2000;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
         }
 
         .toast.show {

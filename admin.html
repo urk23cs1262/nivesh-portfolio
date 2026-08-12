@@ -1,0 +1,1101 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Nivesh R | Admin Dashboard & CMS</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="CSS/style.css">
+    <link rel="stylesheet" href="CSS/admin.css">
+    <link rel="icon" type="image/jpeg" href="assets/img/NIVESH R.jpg">
+    <!-- Auth guard: JS sets initial visibility synchronously before first paint -->
+    <script>
+        /* Runs synchronously before body renders.
+           Sets #adminApp display based on current auth state so:
+           - If already authenticated: dashboard is visible immediately (no flash)
+           - If NOT authenticated: login overlay is shown, dashboard hidden
+           This uses style.display (not !important CSS) so JS can override it after login */
+        (function () {
+            var isAuth = sessionStorage.getItem('nivesh_admin_auth_token') === 'authenticated';
+            document.addEventListener('DOMContentLoaded', function () {
+                var app     = document.getElementById('adminApp');
+                var overlay = document.getElementById('authOverlay');
+                if (isAuth) {
+                    if (app)     app.style.display = 'flex';
+                    if (overlay) overlay.style.display = 'none';
+                } else {
+                    if (app)     app.style.display = 'none';
+                    if (overlay) overlay.style.display = 'flex';
+                }
+            });
+        })();
+    </script>
+</head>
+
+<body>
+
+    <!-- ==========================================
+         AUTH MODAL / LOGIN SCREEN
+         ========================================== -->
+    <div class="auth-overlay" id="authOverlay">
+        <button class="theme-toggle auth-theme-toggle-pos" id="authThemeToggle" aria-label="Toggle theme" title="Toggle Light/Dark Theme">
+            <i class="fas fa-moon"></i>
+        </button>
+        <div class="auth-card">
+            <div class="auth-lock-icon">
+                <i class="fas fa-user-shield"></i>
+            </div>
+            <div class="logo" style="color: #00e5a0;">NIVEN<span>_</span></div>
+            <p class="auth-subtitle">Private Portfolio CMS & Security Portal</p>
+
+            <div class="auth-alert" id="authAlert" style="display: none;">
+                <div class="auth-alert-icon-wrap">
+                    <i class="fas fa-exclamation-triangle" id="authAlertIcon"></i>
+                </div>
+                <div class="auth-alert-body">
+                    <div class="auth-alert-title" id="authAlertTitle">Authentication Error</div>
+                    <div class="auth-alert-text" id="authAlertText">Invalid credentials entered.</div>
+                </div>
+            </div>
+
+            <form class="auth-form" id="adminLoginForm" autocomplete="off">
+                <div class="form-group">
+                    <label>Admin Password</label>
+                    <div class="input-with-icon">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" id="adminPassword" class="form-control" placeholder="Enter admin password" autocomplete="new-password" required autofocus>
+                    </div>
+                    <div class="field-error" id="pwdError" style="display:none;"><i class="fas fa-times-circle"></i> <span id="pwdErrorText"></span></div>
+                </div>
+
+                <div class="form-group">
+                    <label>Security Verification PIN</label>
+                    <div class="input-with-icon">
+                        <i class="fas fa-key"></i>
+                        <input type="password" id="adminPin" class="form-control" placeholder="Enter admin security pin" autocomplete="new-password" required>
+                    </div>
+                    <div class="field-error" id="pinError" style="display:none;"><i class="fas fa-times-circle"></i> <span id="pinErrorText"></span></div>
+                </div>
+
+                <button type="submit" class="auth-btn" id="loginSubmitBtn">
+                    <i class="fas fa-shield-alt"></i> Access Admin Panel
+                </button>
+            </form>
+
+            <a href="index.html" class="auth-footer-link">
+                <i class="fas fa-arrow-left"></i> Return to Public Portfolio
+            </a>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         MAIN ADMIN APPLICATION LAYOUT
+         ========================================== -->
+    <div class="admin-app" id="adminApp" style="display: none;">
+        <!-- SIDEBAR MOBILE OVERLAY BACKDROP -->
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+        <!-- SIDEBAR -->
+        <aside class="admin-sidebar" id="adminSidebar">
+            <div class="sidebar-header">
+                <div class="logo">NIVEN<span>_</span></div>
+                <!-- <div class="status-badge"><span class="dot"></span> Online</div> -->
+            </div>
+
+            <nav class="sidebar-nav">
+                <!-- <div class="nav-section-title">Navigation</div> -->
+                <ul class="sidebar-menu">
+                    <li>
+                        <a class="sidebar-link active" data-tab="dashboard">
+                            <i class="fas fa-home"></i> <span>Dashboard</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a class="sidebar-link" data-tab="portfolio">
+                            <i class="fas fa-edit"></i> <span>Portfolio CMS</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a class="sidebar-link" data-tab="resume">
+                            <i class="fas fa-file-pdf"></i> <span>Resume Manager</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a class="sidebar-link" data-tab="messages">
+                            <i class="fas fa-envelope"></i> <span>Messages</span>
+                            <span class="nav-badge" id="unreadBadgeNav" style="display: none;">0</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a class="sidebar-link" data-tab="analytics">
+                            <i class="fas fa-chart-line"></i> <span>Analytics</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a class="sidebar-link" data-tab="security">
+                            <i class="fas fa-shield-alt"></i> <span>Security Center</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="admin-user-card">
+                    <div class="admin-avatar">NR</div>
+                    <div class="admin-info">
+                        <div class="name">Nivesh R</div>
+                        <div class="role">Administrator</div>
+                    </div>
+                    <button class="logout-btn-icon" id="logoutIconBtn" title="Logout">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT AREA -->
+        <main class="admin-main">
+
+            <!-- STICKY HEADER -->
+            <header class="admin-header">
+                <div class="header-left">
+                    <button class="mobile-nav-toggle" id="mobileNavToggle" aria-label="Toggle navigation">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div class="header-title-wrap">
+                        <h1 id="headerTabTitle">ADMIN Dashboard</h1>
+                        <p>File-Based Portfolio CMS · Controls Public Portfolio Website</p>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <button class="theme-toggle" id="adminHeaderThemeToggle" aria-label="Toggle theme" title="Toggle Light/Dark Theme">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                    <button class="btn-header" onclick="if(window.CMS_STORE) window.CMS_STORE.exportJSON();" title="Export data/niveshr_portfolio.json file">
+                        <i class="fas fa-download"></i> <span class="btn-text">Export JSON</span>
+                    </button>
+                    <a href="index.html" target="_blank" class="btn-header">
+                        <i class="fas fa-external-link-alt"></i> <span class="btn-text">View Site</span>
+                    </a>
+                    <button class="btn-header btn-header-danger" id="logoutBtn">
+                        <i class="fas fa-sign-out-alt"></i> <span class="btn-text">Logout</span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- TAB PANES CONTAINER -->
+            <div class="admin-content">
+
+                <!-- 1. DASHBOARD OVERVIEW TAB -->
+                <section class="tab-pane active" id="dashboardTab">
+
+                    <!-- PORTFOLIO SUMMARY CARDS -->
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-top">
+                                <div class="stat-label">Projects</div>
+                                <div class="stat-icon blue"><i class="fas fa-folder-open"></i></div>
+                            </div>
+                            <div class="stat-value" id="dashProjectsCount">9</div>
+                            <div class="stat-sub positive"><i class="fas fa-check-circle"></i> Managed via CMS</div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-top">
+                                <div class="stat-label">Certificates</div>
+                                <div class="stat-icon cyan"><i class="fas fa-award"></i></div>
+                            </div>
+                            <div class="stat-value" id="dashCertsCount">5</div>
+                            <div class="stat-sub positive"><i class="fas fa-eye"></i> Modal viewer ready</div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-top">
+                                <div class="stat-label">Education</div>
+                                <div class="stat-icon green"><i class="fas fa-graduation-cap"></i></div>
+                            </div>
+                            <div class="stat-value" id="dashEduCount">3</div>
+                            <div class="stat-sub positive"><i class="fas fa-university"></i> Timeline entries</div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-top">
+                                <div class="stat-label">Internships</div>
+                                <div class="stat-icon purple"><i class="fas fa-briefcase"></i></div>
+                            </div>
+                            <div class="stat-value" id="dashExpCount">3</div>
+                            <div class="stat-sub"><i class="fas fa-building"></i> Work experiences</div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-top">
+                                <div class="stat-label">Unread Messages</div>
+                                <div class="stat-icon red"><i class="fas fa-envelope"></i></div>
+                            </div>
+                            <div class="stat-value" id="dashUnreadMsgs">0</div>
+                            <div class="stat-sub"><i class="fas fa-inbox"></i> Public contact submissions</div>
+                        </div>
+                    </div>
+
+                    <!-- QUICK ACTIONS & RECENT MESSAGES -->
+                    <div class="dashboard-grid">
+                        <div class="panel">
+                            <div class="panel-header">
+                                <div class="panel-title">
+                                    <i class="fas fa-bolt"></i> Quick CMS Actions
+                                </div>
+                            </div>
+                            <div class="quick-actions-grid">
+                                <button class="action-card-btn" onclick="document.querySelector('.sidebar-link[data-tab=\'portfolio\']').click()">
+                                    <i class="fas fa-user-edit"></i>
+                                    <span>Edit About Me</span>
+                                </button>
+                                <button class="action-card-btn" onclick="document.querySelector('.sidebar-link[data-tab=\'portfolio\']').click()">
+                                    <i class="fas fa-folder-plus"></i>
+                                    <span>Manage Projects</span>
+                                </button>
+                                <button class="action-card-btn" onclick="document.querySelector('.sidebar-link[data-tab=\'resume\']').click()">
+                                    <i class="fas fa-file-upload"></i>
+                                    <span>Update Resume</span>
+                                </button>                                <button class="action-card-btn" onclick="if(window.CMS_STORE) window.CMS_STORE.exportJSON();">
+                                    <i class="fas fa-download"></i>
+                                    <span>Export json</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="panel">
+                            <div class="panel-header">
+                                <div class="panel-title">
+                                    <i class="fas fa-envelope-open-text"></i> Recent Inbox Submissions
+                                </div>
+                                <button class="btn-header" onclick="document.querySelector('.sidebar-link[data-tab=\'messages\']').click()">
+                                    View Messages
+                                </button>
+                            </div>
+                            <div id="dashRecentMsgsList"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 2. PORTFOLIO CMS MAIN TAB -->
+                <section class="tab-pane" id="portfolioTab">
+                    <div class="panel">
+                        <!-- IMPORT PORTFOLIO DATA HERO CARD -->
+                        <div class="cms-import-card" style="margin-bottom: 24px; padding: 20px; border-radius: var(--radius-lg); background: var(--bg-card); border: 1px solid var(--border-color);">
+                            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; margin-bottom: 14px;">
+                                <div>
+                                    <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin: 0 0 4px 0; display: flex; align-items: center; gap: 8px;">
+                                        <i class="fas fa-file-import" style="color: var(--primary);"></i> Import Portfolio Data (Single Source of Truth)
+                                    </h3>
+                                    <p style="font-size: 0.84rem; color: var(--text-secondary); margin: 0;">Upload a <code>the json file</code> file to automatically populate and save ALL portfolio CMS sections.</p>
+                                </div>
+                                <!-- Live Save Status Indicator -->
+                                <div id="cmsSaveStatusIndicator" class="cms-save-indicator" style="font-size: 0.85rem; font-weight: 600; padding: 6px 14px; border-radius: var(--radius-full); background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); display: flex; align-items: center; gap: 6px;">
+                                    <i class="fas fa-check-circle"></i> All changes saved
+                                </div>
+                            </div>
+
+                            <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center; padding: 14px; background: var(--bg-input); border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+                                <input type="file" id="cmsImportJsonInput" accept=".json" style="display: none;">
+                                
+                                <button type="button" class="btn-cms-primary" id="cmsUploadJsonBtn">
+                                    <i class="fas fa-upload"></i> Upload niveshr_portfolio.json
+                                </button>
+                                
+                                <button type="button" class="btn-cms-secondary" id="cmsDownloadJsonBtn">
+                                    <i class="fas fa-download"></i> Download Current JSON
+                                </button>
+                                
+                                <button type="button" class="btn-cms-danger" id="cmsResetDefaultsBtn" title="Reset portfolio to baseline defaults" style="width: auto; padding: 0 14px;">
+                                    <i class="fas fa-undo"></i> Reset Defaults
+                                </button>
+
+                                <div style="flex: 1; display: flex; align-items: center; justify-content: flex-end; gap: 12px; font-size: 0.82rem; color: var(--text-secondary); min-width: 250px; flex-wrap: wrap;">
+                                    <span id="cmsImportFileName" style="font-family: monospace; font-weight: 600; color: var(--text-primary);">niveshr_portfolio.json</span>
+                                    <span id="cmsImportStatusBadge" class="badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); padding: 4px 10px; border-radius: 12px; font-weight: 600;">Valid Schema</span>
+                                    <span id="cmsImportLastSaved" style="white-space: nowrap;"><i class="far fa-clock"></i> Just now</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="cms-nav-tabs">
+                            <button class="cms-tab-btn active" data-subtab="cmsAbout">👤 About Me</button>
+                            <button class="cms-tab-btn" data-subtab="cmsEdu">🎓 Education</button>
+                            <button class="cms-tab-btn" data-subtab="cmsExp">💼 Experience</button>
+                            <button class="cms-tab-btn" data-subtab="cmsSkills">🛠️ Skills</button>
+                            <button class="cms-tab-btn" data-subtab="cmsProjects">🤖 Projects</button>
+                            <button class="cms-tab-btn" data-subtab="cmsCerts">🏆 Certificates</button>
+                            <button class="cms-tab-btn" data-subtab="cmsActivities">🏅 Activities</button>
+                            <button class="cms-tab-btn" data-subtab="cmsContact">✉️ Contact</button>
+                            <button class="cms-tab-btn" data-subtab="cmsSocial">🔗 Social Links</button>
+                            <button class="cms-tab-btn" data-subtab="cmsNav">🧭 Quick Links</button>
+                        </div>
+
+                        <!-- A. ABOUT ME SUBTAB -->
+                        <div class="cms-subtab-pane active" id="cmsAboutSubtab">
+                            <form id="cmsAboutForm">
+                                <!-- Profile Picture Upload Section -->
+                                <div class="form-group-full" style="margin-bottom: 24px;">
+                                    <label>Profile Picture (About Section Image)</label>
+                                    <div style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap; background: var(--bg-card); padding: 18px; border-radius: var(--radius-lg); border: 1px solid var(--border-color);">
+                                        <div style="width: 90px; height: 90px; border-radius: 50%; overflow: hidden; border: 2px solid var(--primary); flex-shrink: 0; background: var(--bg-input); display: flex; align-items: center; justify-content: center; position: relative;">
+                                            <img id="cmsAboutImgPreview" src="./assets/img/NIVESH R.jpg" alt="Profile Preview" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='flex';">
+                                            <div id="cmsAboutImgFallback" style="display: none; font-weight: 700; color: var(--text-primary); font-size: 1.5rem;">NR</div>
+                                        </div>
+                                        <div style="flex: 1;">
+                                            <div style="font-weight: 600; font-size: 0.9rem; margin-bottom: 4px; color: var(--text-primary);">Change Profile Photo</div>
+                                            <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 12px;">Upload a new image file (PNG, JPG, JPEG, WEBP) or remove the profile image.</div>
+                                            <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+                                                <input type="file" id="cmsAboutImgInput" accept="image/*" style="display: none;">
+                                                <button type="button" class="btn-cms-secondary" onclick="document.getElementById('cmsAboutImgInput').click()">
+                                                    <i class="fas fa-upload"></i> Choose Image File
+                                                </button>
+                                                <button type="button" class="btn-cms-danger" id="cmsAboutRemoveImgBtn" title="Remove profile photo" style="width: auto; padding: 0 14px;">
+                                                    <i class="fas fa-trash-alt"></i> Remove Image
+                                                </button>
+                                                <input type="hidden" id="cmsAboutProfileImgUrl" value="./assets/img/NIVESH R.jpg">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-row-2">
+                                    <div class="form-group-full">
+                                        <label>Full Name</label>
+                                        <input type="text" id="cmsAboutName" class="form-control" required>
+                                    </div>
+                                    <div class="form-group-full">
+                                        <label>Professional Role / Title</label>
+                                        <input type="text" id="cmsAboutRole" class="form-control" required>
+                                    </div>
+                                </div>
+
+                                <div class="form-group-full">
+                                    <label>Hero Short Description</label>
+                                    <input type="text" id="cmsAboutShortDesc" class="form-control" required>
+                                </div>
+
+                                <div class="form-group-full">
+                                    <label>About Paragraph 1</label>
+                                    <textarea id="cmsAboutPara1" class="form-control" rows="3" required></textarea>
+                                </div>
+
+                                <div class="form-group-full">
+                                    <label>About Paragraph 2</label>
+                                    <textarea id="cmsAboutPara2" class="form-control" rows="3"></textarea>
+                                </div>
+
+                                <div class="form-group-full">
+                                    <label>Hobbies / Interests</label>
+                                    <input type="text" id="cmsAboutHobbies" class="form-control">
+                                </div>
+
+                                <div class="form-row-3" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px;">
+                                    <div class="form-group-full">
+                                        <label>Projects Built Stat</label>
+                                        <input type="text" id="cmsAboutProjects" class="form-control">
+                                    </div>
+                                    <div class="form-group-full">
+                                        <label>CGPA Score</label>
+                                        <input type="text" id="cmsAboutCgpa" class="form-control">
+                                    </div>
+                                    <div class="form-group-full">
+                                        <label>Graduation Year</label>
+                                        <input type="text" id="cmsAboutGradYear" class="form-control">
+                                    </div>
+                                </div>
+
+                                <div class="form-row-2" style="margin-top: 15px;">
+                                    <div class="form-group-full">
+                                        <label>GitHub Profile URL</label>
+                                        <input type="url" id="cmsAboutGithub" class="form-control">
+                                    </div>
+                                    <div class="form-group-full">
+                                        <label>LinkedIn Profile URL</label>
+                                        <input type="url" id="cmsAboutLinkedin" class="form-control">
+                                    </div>
+                                </div>
+
+                                <div class="form-row-2">
+                                    <div class="form-group-full">
+                                        <label>Instagram Profile URL</label>
+                                        <input type="url" id="cmsAboutInstagram" class="form-control">
+                                    </div>
+                                    <div class="form-group-full">
+                                        <label>Contact Email</label>
+                                        <input type="email" id="cmsAboutEmail" class="form-control">
+                                    </div>
+                                </div>
+
+                                <button type="submit" class="btn-cms-primary" style="margin-top: 15px;">
+                                    <i class="fas fa-save"></i> Save About Me Section
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- B. EDUCATION SUBTAB -->
+                        <div class="cms-subtab-pane" id="cmsEduSubtab">
+                            <div class="cms-subtab-header">
+                                <button class="btn-cms-primary" onclick="window.openEduModal(-1)">
+                                    <i class="fas fa-plus"></i> Add Education Entry
+                                </button>
+                            </div>
+                            <div id="cmsEduContainer"></div>
+                        </div>
+
+                        <!-- C. EXPERIENCE SUBTAB -->
+                        <div class="cms-subtab-pane" id="cmsExpSubtab">
+                            <div class="cms-subtab-header">
+                                <button class="btn-cms-primary" onclick="window.openExpModal(-1)">
+                                    <i class="fas fa-plus"></i> Add Internship Experience
+                                </button>
+                            </div>
+                            <div id="cmsExpContainer"></div>
+                        </div>
+
+                        <!-- D. SKILLS SUBTAB -->
+                        <div class="cms-subtab-pane" id="cmsSkillsSubtab">
+                            <div class="cms-subtab-header">
+                                <button class="btn-cms-primary" onclick="window.openSkillCatModal(-1)">
+                                    <i class="fas fa-plus"></i> Add Skill Category
+                                </button>
+                            </div>
+                            <div id="cmsSkillsContainer"></div>
+                        </div>
+
+                        <!-- E. PROJECTS SUBTAB -->
+                        <div class="cms-subtab-pane" id="cmsProjectsSubtab">
+                            <div class="cms-subtab-header">
+                                <button class="btn-cms-primary" onclick="window.openProjectModal(-1)">
+                                    <i class="fas fa-plus"></i> Add New Project
+                                </button>
+                            </div>
+                            <div id="cmsProjectsContainer"></div>
+                        </div>
+
+                        <!-- F. CERTIFICATES SUBTAB -->
+                        <div class="cms-subtab-pane" id="cmsCertsSubtab">
+                            <div class="cms-subtab-header">
+                                <button class="btn-cms-primary" onclick="window.promptAddCert()">
+                                    <i class="fas fa-plus"></i> Add Certification
+                                </button>
+                            </div>
+                            <div id="cmsCertsContainer"></div>
+                        </div>
+
+                        <!-- G. ACTIVITIES SUBTAB -->
+                        <div class="cms-subtab-pane" id="cmsActivitiesSubtab">
+                            <div class="cms-subtab-header">
+                                <button class="btn-cms-primary" onclick="window.promptAddActivity()">
+                                    <i class="fas fa-plus"></i> Add Activity
+                                </button>
+                            </div>
+                            <div id="cmsActivitiesContainer"></div>
+                        </div>
+
+                        <!-- H. CONTACT SUBTAB -->
+                        <div class="cms-subtab-pane" id="cmsContactSubtab">
+                            <form id="cmsContactForm">
+                                <div class="form-row-2">
+                                    <div class="form-group-full">
+                                        <label>Email Address</label>
+                                        <input type="email" id="cmsContactEmail" class="form-control" required>
+                                    </div>
+                                    <div class="form-group-full">
+                                        <label>Phone Number</label>
+                                        <input type="text" id="cmsContactPhone" class="form-control" required>
+                                    </div>
+                                </div>
+                                <div class="form-group-full">
+                                    <label>Location</label>
+                                    <input type="text" id="cmsContactLocation" class="form-control" required>
+                                </div>
+                                <div class="form-group-full">
+                                    <label>Contact Section Heading</label>
+                                    <input type="text" id="cmsContactHeading" class="form-control" required>
+                                </div>
+                                <div class="form-group-full">
+                                    <label>Contact Description</label>
+                                    <textarea id="cmsContactDesc" class="form-control" rows="3" required></textarea>
+                                </div>
+                                <button type="submit" class="btn-cms-primary">
+                                    <i class="fas fa-save"></i> Save Contact Settings
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- I. SOCIAL LINKS SUBTAB -->
+                        <div class="cms-subtab-pane" id="cmsSocialSubtab">
+                            <div id="cmsSocialContainer"></div>
+                        </div>
+
+                        <!-- K. QUICK LINKS / NAVIGATION SUBTAB -->
+                        <div class="cms-subtab-pane" id="cmsNavSubtab">
+                            <div id="cmsNavContainer"></div>
+                        </div>
+
+                    </div>
+                </section>
+
+                <!-- 3. RESUME MANAGER TAB -->
+                <section class="tab-pane" id="resumeTab">
+                    <div class="panel">
+                        <div class="panel-header">
+                            <div class="panel-title">
+                                <i class="fas fa-file-pdf"></i> Resume Manager & PDF Viewer
+                            </div>
+                        </div>
+
+                        <div class="resume-preview-container">
+                            <div>
+                                <div class="resume-upload-card" id="resumeDropZone">
+                                    <div class="upload-icon">
+                                        <i class="fas fa-cloud-upload-alt"></i>
+                                    </div>
+                                    <div class="upload-title">Upload New Resume PDF</div>
+                                    <div class="upload-desc">Click to select PDF file (Max 5MB)</div>
+                                    <input type="file" id="resumeFileInput" class="file-input-hidden" accept=".pdf">
+                                    <button type="button" class="btn-header btn-header-primary">Choose PDF File</button>
+                                </div>
+
+                                <div class="active-resume-badge">
+                                    <h5 class="active-resume-title">ACTIVE PUBLIC RESUME</h5>
+                                    <p id="activeResumeName">NIVESH_R_RESUME.pdf</p>
+                                    <small id="activeResumeDate"></small>
+                                </div>
+                            </div>
+
+                            <div class="pdf-viewer-frame">
+                                <iframe id="adminPdfFrame" src="assets/pdf/resume/NIVESH_R_RESUME.pdf"></iframe>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 4. MESSAGES INBOX TAB -->
+                <section class="tab-pane" id="messagesTab">
+                    <div class="panel">
+                        <div class="panel-header">
+                            <div class="panel-title">
+                                <i class="fas fa-inbox"></i> Public Contact Form Messages
+                            </div>
+                        </div>
+                        <div id="fullMessagesList"></div>
+                    </div>
+                </section>
+
+                <!-- 5. ANALYTICS TAB -->
+                <section class="tab-pane" id="analyticsTab">
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-label">Total Unique Visitors</div>
+                            <div class="stat-value">1,284</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Page Views</div>
+                            <div class="stat-value">3,450</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Resume Downloads</div>
+                            <div class="stat-value">412</div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 6. SECURITY CENTER TAB -->
+                <section class="tab-pane" id="securityTab">
+                    <div class="panel">
+                        <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 20px;">
+                            <div class="panel-title" style="font-size: 1.15rem; font-weight: 700;">
+                                <i class="fas fa-shield-alt" style="color: var(--primary); margin-right: 8px;"></i> Admin Activity Audit Logs
+                            </div>
+                            <button type="button" class="btn-cms-danger" id="clearAuditLogsBtn" title="Clear all audit logs" style="width: auto; padding: 0 14px;">
+                                <i class="fas fa-trash-alt"></i> Clear Audit Logs
+                            </button>
+                        </div>
+
+                        <!-- Audit Log Filters Toolbar -->
+                        <div class="audit-log-toolbar">
+                            <div style="flex: 1; min-width: 200px;">
+                                <input type="text" id="auditSearchInput" placeholder="🔍 Search activity logs..." class="form-control">
+                            </div>
+                            <div style="width: 200px;">
+                                <select id="auditCategoryFilter" class="form-control">
+                                    <option value="ALL">All Categories</option>
+                                    <option value="System">System</option>
+                                    <option value="About">About</option>
+                                    <option value="Education">Education</option>
+                                    <option value="Experience">Experience</option>
+                                    <option value="Skills">Skills</option>
+                                    <option value="Projects">Projects</option>
+                                    <option value="Certificates">Certificates</option>
+                                    <option value="Activities">Activities</option>
+                                    <option value="Contact">Contact</option>
+                                    <option value="Social Links">Social Links</option>
+                                    <option value="Navigation">Quick Links</option>
+                                    <option value="Authentication">Authentication</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div id="adminActivityLogsList" class="audit-logs-list"></div>
+                    </div>
+                </section>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- ==========================================
+         EDUCATION ADD / EDIT MODAL
+         ========================================== -->
+    <div class="admin-modal-overlay" id="eduModal" role="dialog" aria-modal="true">
+        <div class="admin-modal-card" style="max-width: 620px; text-align: left; padding: 24px; max-height: 85vh; overflow-y: auto; margin: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; padding-bottom: 12px; border-bottom: 1px solid var(--border-color); position: sticky; top: -24px; background: var(--bg-card); z-index: 10; padding-top: 4px;">
+                <h3 class="admin-modal-title" id="eduModalTitle" style="margin: 0; display: flex; align-items: center; gap: 8px;">
+                    <i class="fas fa-graduation-cap" style="color: var(--primary);"></i> Edit Education Entry
+                </h3>
+                <button type="button" class="btn-cms-danger" id="closeEduModalBtn" style="width: auto; padding: 4px 10px;">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <form id="eduForm">
+                <input type="hidden" id="eduIndexInput" value="-1">
+
+                <div class="form-group-full" style="margin-bottom: 14px;">
+                    <label style="font-weight: 600; font-size: 0.85rem; display: block; margin-bottom: 6px;">Institution / University Name</label>
+                    <input type="text" id="eduInstInput" class="form-control" placeholder="e.g. Karunya Institute of Technology and Science" required>
+                </div>
+
+                <div class="form-row-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px;">
+                    <div>
+                        <label style="font-weight: 600; font-size: 0.85rem; display: block; margin-bottom: 6px;">Degree / Course</label>
+                        <input type="text" id="eduDegreeInput" class="form-control" placeholder="e.g. B.Tech in Computer Science" required>
+                    </div>
+                    <div>
+                        <label style="font-weight: 600; font-size: 0.85rem; display: block; margin-bottom: 6px;">Education Type</label>
+                        <select id="eduTypeInput" class="form-control">
+                            <option value="College">College / University</option>
+                            <option value="Higher Secondary (12th)">Higher Secondary (12th)</option>
+                            <option value="Secondary (10th)">Secondary (10th)</option>
+                            <option value="School">School</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row-3" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 14px;">
+                    <div>
+                        <label style="font-weight: 600; font-size: 0.85rem; display: block; margin-bottom: 6px;">Start Year</label>
+                        <input type="text" id="eduStartYearInput" class="form-control" placeholder="e.g. 2023" required>
+                    </div>
+                    <div>
+                        <label style="font-weight: 600; font-size: 0.85rem; display: block; margin-bottom: 6px;">End Year</label>
+                        <input type="text" id="eduEndYearInput" class="form-control" placeholder="e.g. 2027" required>
+                    </div>
+                    <div>
+                        <label style="font-weight: 600; font-size: 0.85rem; display: block; margin-bottom: 6px;">Score / CGPA</label>
+                        <input type="text" id="eduScoreInput" class="form-control" placeholder="e.g. CGPA: 7.8 / 10">
+                    </div>
+                </div>
+
+                <div class="form-group-full" style="margin-bottom: 14px;">
+                    <label style="font-weight: 600; font-size: 0.85rem; display: block; margin-bottom: 6px;">Description / Coursework Highlights</label>
+                    <textarea id="eduDescInput" class="form-control" rows="3" placeholder="Brief overview of your studies and focus areas..."></textarea>
+                </div>
+
+                <div class="form-group-full" style="margin-bottom: 20px;">
+                    <label style="font-weight: 600; font-size: 0.85rem; display: block; margin-bottom: 6px;">Institution Logo Image</label>
+                    <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap; background: var(--bg-card); padding: 14px; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+                        <div style="width: 60px; height: 60px; border-radius: var(--radius-md); overflow: hidden; border: 1px solid var(--border-color); flex-shrink: 0; background: var(--bg-input); display: flex; align-items: center; justify-content: center; position: relative;">
+                            <img id="eduImgPreview" src="" alt="Logo Preview" style="width: 100%; height: 100%; object-fit: contain;" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='flex';">
+                            <div id="eduImgFallback" style="font-weight: 700; color: var(--text-secondary); font-size: 1.2rem; display: flex; align-items: center; justify-content: center;"><i class="fas fa-university"></i></div>
+                        </div>
+                        <div style="flex: 1; min-width: 200px;">
+                            <input type="text" id="eduLogoInput" class="form-control" placeholder="After Uploading the Image, you see the path" style="margin-bottom: 8px;">
+                            <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+                                <input type="file" id="eduImgFileInput" accept="image/*" style="display: none;">
+                                <button type="button" class="btn-cms-secondary" onclick="document.getElementById('eduImgFileInput').click()" style="padding: 6px 12px; font-size: 0.8rem; height: 34px;">
+                                    <i class="fas fa-upload"></i> Upload Image
+                                </button>
+                                <button type="button" class="btn-cms-danger" id="eduRemoveImgBtn" style="padding: 6px 12px; font-size: 0.8rem; width: auto; height: 34px;">
+                                    <i class="fas fa-trash-alt"></i> Remove Image
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="admin-modal-actions" style="display: flex; justify-content: flex-end; gap: 10px;">
+                    <button type="button" class="btn-admin-modal btn-admin-modal-secondary" id="cancelEduModalBtn">
+                        Cancel
+                    </button>
+                    <button type="submit" class="btn-cms-primary" style="padding: 10px 20px;">
+                        <i class="fas fa-save"></i> Save Education Entry
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         EXPERIENCE ADD / EDIT MODAL
+         ========================================== -->
+    <div class="admin-modal-overlay" id="expModal" role="dialog" aria-modal="true">
+        <div class="admin-modal-card" style="max-width: 640px; text-align: left; padding: 24px; max-height: 85vh; overflow-y: auto; margin: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; padding-bottom: 12px; border-bottom: 1px solid var(--border-color); position: sticky; top: -24px; background: var(--bg-card); z-index: 10; padding-top: 4px;">
+                <h3 class="admin-modal-title" id="expModalTitle" style="margin: 0; display: flex; align-items: center; gap: 8px;">
+                    <i class="fas fa-briefcase" style="color: var(--primary);"></i> Edit Internship Experience
+                </h3>
+                <button type="button" class="btn-cms-danger" id="closeExpModalBtn" style="width: auto; padding: 4px 10px;">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <form id="expForm">
+                <input type="hidden" id="expIndexInput" value="-1">
+
+                <div class="form-row-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px;">
+                    <div>
+                        <label style="font-weight: 600; font-size: 0.85rem; display: block; margin-bottom: 6px;">Job Title / Role</label>
+                        <input type="text" id="expJobTitleInput" class="form-control" placeholder="e.g. Cybersecurity Intern" required>
+                    </div>
+                    <div>
+                        <label style="font-weight: 600; font-size: 0.85rem; display: block; margin-bottom: 6px;">Company / Organization</label>
+                        <input type="text" id="expOrgInput" class="form-control" placeholder="e.g. Cisco Networking Academy" required>
+                    </div>
+                </div>
+
+                <div class="form-row-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px;">
+                    <div>
+                        <label style="font-weight: 600; font-size: 0.85rem; display: block; margin-bottom: 6px;">Program / Department Name</label>
+                        <input type="text" id="expProgramInput" class="form-control" placeholder="e.g. AICTE Virtual Internship Program">
+                    </div>
+                    <div>
+                        <label style="font-weight: 600; font-size: 0.85rem; display: block; margin-bottom: 6px;">Work Type</label>
+                        <select id="expWorkTypeInput" class="form-control">
+                            <option value="Remote">Remote</option>
+                            <option value="On-site">On-site</option>
+                            <option value="Hybrid">Hybrid</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row-3" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 14px;">
+                    <div>
+                        <label style="font-weight: 600; font-size: 0.85rem; display: block; margin-bottom: 6px;">Start Date</label>
+                        <input type="text" id="expStartDateInput" class="form-control" placeholder="e.g. Jun 2024" required>
+                    </div>
+                    <div>
+                        <label style="font-weight: 600; font-size: 0.85rem; display: block; margin-bottom: 6px;">End Date</label>
+                        <input type="text" id="expEndDateInput" class="form-control" placeholder="e.g. Aug 2024" required>
+                    </div>
+                    <div>
+                        <label style="font-weight: 600; font-size: 0.85rem; display: block; margin-bottom: 6px;">Location</label>
+                        <input type="text" id="expLocationInput" class="form-control" placeholder="e.g. Remote">
+                    </div>
+                </div>
+
+                <div class="form-group-full" style="margin-bottom: 14px;">
+                    <label style="font-weight: 600; font-size: 0.85rem; display: block; margin-bottom: 6px;">Description / Key Responsibilities</label>
+                    <textarea id="expDescInput" class="form-control" rows="3" placeholder="Overview of tasks, accomplishments, and skills applied..."></textarea>
+                </div>
+
+                <div class="form-group-full" style="margin-bottom: 14px;">
+                    <label style="font-weight: 600; font-size: 0.85rem; display: block; margin-bottom: 6px;">Technologies Used (Comma-separated)</label>
+                    <input type="text" id="expTechInput" class="form-control" placeholder="e.g. Cisco Packet Tracer, Routing & Switching, VLANs, Firewalls">
+                </div>
+
+                <div class="form-group-full" style="margin-bottom: 20px;">
+                    <label style="font-weight: 600; font-size: 0.85rem; display: block; margin-bottom: 6px;">Certificate / Company Logo Image</label>
+                    <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap; background: var(--bg-card); padding: 14px; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+                        <div style="width: 60px; height: 60px; border-radius: var(--radius-md); overflow: hidden; border: 1px solid var(--border-color); flex-shrink: 0; background: var(--bg-input); display: flex; align-items: center; justify-content: center; position: relative;">
+                            <img id="expImgPreview" src="" alt="Logo Preview" style="width: 100%; height: 100%; object-fit: contain;" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='flex';">
+                            <div id="expImgFallback" style="font-weight: 700; color: var(--text-secondary); font-size: 1.2rem; display: flex; align-items: center; justify-content: center;"><i class="fas fa-briefcase"></i></div>
+                        </div>
+                        <div style="flex: 1; min-width: 200px;">
+                            <input type="text" id="expCertLogoInput" class="form-control" placeholder="After Uploading the Image, you see the path" style="margin-bottom: 8px;">
+                            <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+                                <input type="file" id="expImgFileInput" accept="image/*" style="display: none;">
+                                <button type="button" class="btn-cms-secondary" onclick="document.getElementById('expImgFileInput').click()" style="padding: 6px 12px; font-size: 0.8rem; height: 34px;">
+                                    <i class="fas fa-upload"></i> Upload Image
+                                </button>
+                                <button type="button" class="btn-cms-danger" id="expRemoveImgBtn" style="padding: 6px 12px; font-size: 0.8rem; width: auto; height: 34px;">
+                                    <i class="fas fa-trash-alt"></i> Remove Image
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="admin-modal-actions" style="display: flex; justify-content: flex-end; gap: 10px;">
+                    <button type="button" class="btn-admin-modal btn-admin-modal-secondary" id="cancelExpModalBtn">
+                        Cancel
+                    </button>
+                    <button type="submit" class="btn-cms-primary" style="padding: 10px 20px;">
+                        <i class="fas fa-save"></i> Save Experience Entry
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         PROJECT ADD / EDIT MODAL
+         ========================================== -->
+    <div class="admin-modal-overlay" id="projectModal" role="dialog" aria-modal="true">
+        <div class="admin-modal-card" style="max-width: 640px; text-align: left; padding: 24px; max-height: 85vh; overflow-y: auto; margin: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; padding-bottom: 12px; border-bottom: 1px solid var(--border-color); position: sticky; top: -24px; background: var(--bg-card); z-index: 10; padding-top: 4px;">
+                <h3 class="admin-modal-title" id="projectModalTitle" style="margin: 0; display: flex; align-items: center; gap: 8px;">
+                    <i class="fas fa-rocket" style="color: var(--primary);"></i> Edit Project
+                </h3>
+                <button type="button" class="btn-cms-danger" id="closeProjectModalBtn" style="width: auto; padding: 4px 10px;">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <form id="projectForm">
+                <input type="hidden" id="projectIndexInput" value="-1">
+
+                <div class="form-row-3" style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 12px; margin-bottom: 14px;">
+                    <div>
+                        <label style="font-weight: 600; font-size: 0.85rem; display: block; margin-bottom: 6px;">Project Name</label>
+                        <input type="text" id="projectNameInput" class="form-control" placeholder="e.g. NEUROHIRE AI" required>
+                    </div>
+                    <div>
+                        <label style="font-weight: 600; font-size: 0.85rem; display: block; margin-bottom: 6px;">Icon / Emoji</label>
+                        <input type="text" id="projectIconInput" class="form-control" placeholder="e.g. 🤖">
+                    </div>
+                    <div>
+                        <label style="font-weight: 600; font-size: 0.85rem; display: block; margin-bottom: 6px;">Status</label>
+                        <select id="projectStatusInput" class="form-control">
+                            <option value="Completed">Completed</option>
+                            <option value="Currently Developing">Currently Developing</option>
+                            <option value="In Progress">In Progress</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group-full" style="margin-bottom: 14px;">
+                    <label style="font-weight: 600; font-size: 0.85rem; display: block; margin-bottom: 6px;">Short Description</label>
+                    <input type="text" id="projectShortDescInput" class="form-control" placeholder="Brief summary of the project..." required>
+                </div>
+
+                <div class="form-group-full" style="margin-bottom: 14px;">
+                    <label style="font-weight: 600; font-size: 0.85rem; display: block; margin-bottom: 6px;">Detailed Description</label>
+                    <textarea id="projectLongDescInput" class="form-control" rows="3" placeholder="Full details, features, architecture, and highlights..."></textarea>
+                </div>
+
+                <div class="form-row-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px;">
+                    <div>
+                        <label style="font-weight: 600; font-size: 0.85rem; display: block; margin-bottom: 6px;">GitHub Repository URL</label>
+                        <input type="text" id="projectGithubInput" class="form-control" placeholder="https://github.com/...">
+                    </div>
+                    <div>
+                        <label style="font-weight: 600; font-size: 0.85rem; display: block; margin-bottom: 6px;">Live Demo URL</label>
+                        <input type="text" id="projectDemoInput" class="form-control" placeholder="https://...">
+                    </div>
+                </div>
+
+                <div class="form-group-full" style="margin-bottom: 14px;">
+                    <label style="font-weight: 600; font-size: 0.85rem; display: block; margin-bottom: 6px;">Technologies Used (Comma-separated)</label>
+                    <input type="text" id="projectTechInput" class="form-control" placeholder="e.g. Next.js, FastAPI, PostgreSQL, Gemini">
+                </div>
+
+
+
+                <div class="form-group-full" style="margin-bottom: 20px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                        <label style="font-weight: 600; font-size: 0.85rem; margin: 0;">Project Screenshots / Images</label>
+                        <span id="projectImagesCountBadge" style="font-size: 0.75rem; color: var(--text-secondary); background: var(--bg-card); padding: 2px 8px; border-radius: 10px; border: 1px solid var(--border-color);">0 Images</span>
+                    </div>
+
+                    <div style="background: var(--bg-card); padding: 14px; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+                        <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 12px;">
+                            <input type="text" id="projectImageInput" class="form-control" placeholder="Paste image URL and click Add" style="flex: 1; min-width: 200px;">
+                            <button type="button" class="btn-cms-secondary" id="projectAddUrlBtn" style="padding: 6px 12px; font-size: 0.8rem; height: 38px; white-space: nowrap;">
+                                <i class="fas fa-link"></i> Add URL
+                            </button>
+                            <input type="file" id="projectImgFileInput" accept="image/*" multiple style="display: none;">
+                            <button type="button" class="btn-cms-primary" onclick="document.getElementById('projectImgFileInput').click()" style="padding: 6px 14px; font-size: 0.8rem; height: 38px; white-space: nowrap;">
+                                <i class="fas fa-images"></i> Upload Image(s)
+                            </button>
+                            <button type="button" class="btn-cms-danger" id="projectClearAllImgsBtn" style="padding: 6px 12px; font-size: 0.8rem; height: 38px; width: auto; white-space: nowrap;" title="Clear all images">
+                                <i class="fas fa-trash-alt"></i> Clear All
+                            </button>
+                        </div>
+
+                        <!-- Gallery Thumbnails Preview Container -->
+                        <div id="projectImagesList" style="display: flex; flex-wrap: wrap; gap: 10px; min-height: 50px; align-items: center; justify-content: flex-start; padding: 10px; background: var(--bg-input); border-radius: var(--radius-sm); border: 1px dashed var(--border-color);">
+                            <div style="color: var(--text-muted); font-size: 0.85rem; width: 100%; text-align: center; padding: 10px;">No images uploaded yet. Click "Upload Image(s)" or paste a URL above.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="admin-modal-actions" style="display: flex; justify-content: flex-end; gap: 10px;">
+                    <button type="button" class="btn-admin-modal btn-admin-modal-secondary" id="cancelProjectModalBtn">
+                        Cancel
+                    </button>
+                    <button type="submit" class="btn-cms-primary" style="padding: 10px 20px;">
+                        <i class="fas fa-save"></i> Save Project Entry
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         SKILL CATEGORY ADD / EDIT MODAL
+         ========================================== -->
+    <div class="admin-modal-overlay" id="skillCatModal" role="dialog" aria-modal="true">
+        <div class="admin-modal-card" style="max-width: 500px; text-align: left; padding: 24px; max-height: 85vh; overflow-y: auto; margin: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; padding-bottom: 12px; border-bottom: 1px solid var(--border-color); position: sticky; top: -24px; background: var(--bg-card); z-index: 10; padding-top: 4px;">
+                <h3 class="admin-modal-title" id="skillCatModalTitle" style="margin: 0; display: flex; align-items: center; gap: 8px;">
+                    <i class="fas fa-tools" style="color: var(--primary);"></i> Edit Skill Category
+                </h3>
+                <button type="button" class="btn-cms-danger" id="closeSkillCatModalBtn" style="width: auto; padding: 4px 10px;">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <form id="skillCatForm">
+                <input type="hidden" id="skillCatIndexInput" value="-1">
+
+                <div class="form-group-full" style="margin-bottom: 14px;">
+                    <label style="font-weight: 600; font-size: 0.85rem; display: block; margin-bottom: 6px;">Category Name</label>
+                    <input type="text" id="skillCatNameInput" class="form-control" placeholder="e.g. Programming, Frontend, Backend, AI / ML" required>
+                </div>
+
+                <div class="form-group-full" style="margin-bottom: 14px;">
+                    <label style="font-weight: 600; font-size: 0.85rem; display: block; margin-bottom: 6px;">Category Icon (FontAwesome Class)</label>
+                    <input type="text" id="skillCatIconInput" class="form-control" placeholder="e.g. fas fa-code, fas fa-layer-group, fas fa-server">
+                </div>
+
+                <div class="form-group-full" style="margin-bottom: 20px;">
+                    <label style="font-weight: 600; font-size: 0.85rem; display: block; margin-bottom: 6px;">Skills in Category (Comma-separated)</label>
+                    <textarea id="skillCatSkillsInput" class="form-control" rows="3" placeholder="e.g. HTML5, CSS3, JavaScript, React, Vue.js"></textarea>
+                    <span style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 4px; display: block;">Separate skills with commas (e.g. Python, Java, C++).</span>
+                </div>
+
+                <div class="admin-modal-actions" style="display: flex; justify-content: flex-end; gap: 10px;">
+                    <button type="button" class="btn-admin-modal btn-admin-modal-secondary" id="cancelSkillCatModalBtn">
+                        Cancel
+                    </button>
+                    <button type="submit" class="btn-cms-primary" style="padding: 10px 20px;">
+                        <i class="fas fa-save"></i> Save Category
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         SKILL ITEM ADD / EDIT MODAL
+         ========================================== -->
+    <div class="admin-modal-overlay" id="skillItemModal" role="dialog" aria-modal="true">
+        <div class="admin-modal-card" style="max-width: 480px; text-align: left; padding: 24px; max-height: 85vh; overflow-y: auto; margin: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; padding-bottom: 12px; border-bottom: 1px solid var(--border-color); position: sticky; top: -24px; background: var(--bg-card); z-index: 10; padding-top: 4px;">
+                <h3 class="admin-modal-title" id="skillItemModalTitle" style="margin: 0; display: flex; align-items: center; gap: 8px;">
+                    <i class="fas fa-cog" style="color: var(--primary);"></i> Edit Skill Details
+                </h3>
+                <button type="button" class="btn-cms-danger" id="closeSkillItemModalBtn" style="width: auto; padding: 4px 10px;">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <form id="skillItemForm">
+                <input type="hidden" id="skillItemCatIndexInput" value="-1">
+                <input type="hidden" id="skillItemIndexInput" value="-1">
+
+                <div class="form-group-full" style="margin-bottom: 20px;">
+                    <label style="font-weight: 600; font-size: 0.85rem; display: block; margin-bottom: 6px;">Skill Name</label>
+                    <input type="text" id="skillItemNameInput" class="form-control" placeholder="e.g. Python, HTML5, React, Node.js, MongoDB" required>
+                </div>
+
+                <div class="admin-modal-actions" style="display: flex; justify-content: flex-end; gap: 10px;">
+                    <button type="button" class="btn-admin-modal btn-admin-modal-secondary" id="cancelSkillItemModalBtn">
+                        Cancel
+                    </button>
+                    <button type="submit" class="btn-cms-primary" style="padding: 10px 20px;">
+                        <i class="fas fa-save"></i> Save Skill
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         RESET DEFAULTS CONFIRMATION MODAL
+         ========================================== -->
+    <div class="admin-modal-overlay" id="resetDefaultsConfirmModal" role="dialog" aria-modal="true">
+        <div class="admin-modal-card">
+            <div class="admin-modal-icon danger">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <h3 class="admin-modal-title">Reset Portfolio to Defaults?</h3>
+            <p class="admin-modal-text">This will reset all CMS sections to the baseline default configuration.</p>
+            <div class="admin-modal-actions">
+                <button type="button" class="btn-admin-modal btn-admin-modal-secondary" id="cancelResetDefaultsBtn">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button type="button" class="btn-admin-modal btn-admin-modal-danger" id="confirmResetDefaultsBtn">
+                    <i class="fas fa-undo"></i> Reset Data
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         CLEAR AUDIT LOGS CONFIRMATION MODAL
+         ========================================== -->
+    <div class="admin-modal-overlay" id="clearLogsConfirmModal" role="dialog" aria-modal="true" aria-labelledby="clearLogsModalTitle">
+        <div class="admin-modal-card">
+            <div class="admin-modal-icon danger">
+                <i class="fas fa-trash-alt"></i>
+            </div>
+            <h3 class="admin-modal-title" id="clearLogsModalTitle">Clear all audit logs?</h3>
+            <p class="admin-modal-text">This action will permanently remove the recorded admin activity history.</p>
+            <div class="admin-modal-actions">
+                <button type="button" class="btn-admin-modal btn-admin-modal-secondary" id="cancelClearLogsBtn">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button type="button" class="btn-admin-modal btn-admin-modal-danger" id="confirmClearLogsBtn">
+                    <i class="fas fa-trash-alt"></i> Clear Logs
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         LOGOUT CONFIRMATION MODAL DIALOG
+         ========================================== -->
+    <div class="admin-modal-overlay" id="logoutConfirmModal" role="dialog" aria-modal="true" aria-labelledby="logoutModalTitle">
+        <div class="admin-modal-card">
+            <div class="admin-modal-icon danger">
+                <i class="fas fa-sign-out-alt"></i>
+            </div>
+            <h3 class="admin-modal-title" id="logoutModalTitle">Confirm Logout</h3>
+            <p class="admin-modal-text">Are you sure you want to log out of the admin panel?</p>
+            <div class="admin-modal-actions">
+                <button type="button" class="btn-admin-modal btn-admin-modal-secondary" id="cancelLogoutBtn">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button type="button" class="btn-admin-modal btn-admin-modal-danger" id="confirmLogoutBtn">
+                    <i class="fas fa-sign-out-alt"></i> Yes, Logout
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+    <script src="JS/initialData.js"></script>
+    <script src="JS/cmsStore.js"></script>
+    <script src="config.js"></script>
+    <script src="JS/admin.js"></script>
+</body>
+
+</html>

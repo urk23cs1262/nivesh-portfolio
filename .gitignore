@@ -1,0 +1,10 @@
+# Environment and Secret Files
+.env
+.env.local
+.env.production
+config.js
+
+# OS and Log files
+.DS_Store
+Thumbs.db
+*.log

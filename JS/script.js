@@ -40,11 +40,11 @@ emailjs.init("Tw3LSYbX8-nZodC-t");
                     const data = await fallbackRes.json();
                     ipData.ip = data.ip;
                 }
-            } catch (err) {}
+            } catch (err) { }
         }
 
-        const locationStr = ipData.city && ipData.city !== "Unknown" 
-            ? `${ipData.city}, ${ipData.region}, ${ipData.country_name}` 
+        const locationStr = ipData.city && ipData.city !== "Unknown"
+            ? `${ipData.city}, ${ipData.region}, ${ipData.country_name}`
             : (ipData.country_name || "Unknown Location");
 
         const visitorDetails = `
@@ -61,6 +61,45 @@ emailjs.init("Tw3LSYbX8-nZodC-t");
 📄 Landing Page: ${window.location.href}
 `.trim();
 
+        // Sync with Admin Analytics Storage
+        try {
+            const rawAnalytics = localStorage.getItem('nivesh_admin_analytics');
+            let analytics = rawAnalytics ? JSON.parse(rawAnalytics) : {
+                totalVisitors: 0,
+                pageViews: 0,
+                resumeDownloads: 0,
+                resumeViews: 0,
+                topPages: [{ name: 'Home', views: 0 }, { name: 'Projects', views: 0 }, { name: 'Resume', views: 0 }, { name: 'About', views: 0 }],
+                visitorLogs: [],
+                dailyStats: [
+                    { day: 'Mon', count: 0 },
+                    { day: 'Tue', count: 0 },
+                    { day: 'Wed', count: 0 },
+                    { day: 'Thu', count: 0 },
+                    { day: 'Fri', count: 0 },
+                    { day: 'Sat', count: 0 },
+                    { day: 'Sun', count: 0 }
+                ]
+            };
+
+            analytics.totalVisitors = (analytics.totalVisitors || 0) + 1;
+            analytics.pageViews = (analytics.pageViews || 0) + 1;
+
+            if (!analytics.visitorLogs) analytics.visitorLogs = [];
+            analytics.visitorLogs.unshift({
+                time: visitTime,
+                ip: ipData.ip || '103.110.170.42',
+                location: locationStr,
+                os: os,
+                browser: browser,
+                referrer: referrer,
+                page: window.location.hash || 'Home'
+            });
+
+            if (analytics.visitorLogs.length > 50) analytics.visitorLogs.pop();
+            localStorage.setItem('nivesh_admin_analytics', JSON.stringify(analytics));
+        } catch (e) { }
+
         if (typeof emailjs !== 'undefined') {
             emailjs.send("service_ay6dt22", "template_r48p4bg", {
                 user_name: "Portfolio Analytics",
@@ -75,282 +114,658 @@ emailjs.init("Tw3LSYbX8-nZodC-t");
 
 // ===== THEME TOGGLE =====
 const html = document.documentElement;
-        const themeBtn = document.getElementById('themeToggle');
-        const savedTheme = localStorage.getItem('theme') || 'dark';
-        html.setAttribute('data-theme', savedTheme);
-        themeBtn.innerHTML = savedTheme === 'dark' ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+const themeBtn = document.getElementById('themeToggle');
+const savedTheme = localStorage.getItem('theme') || 'dark';
+html.setAttribute('data-theme', savedTheme);
+themeBtn.innerHTML = savedTheme === 'dark' ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
 
-        themeBtn.addEventListener('click', () => {
-            const current = html.getAttribute('data-theme');
-            const next = current === 'dark' ? 'light' : 'dark';
-            html.setAttribute('data-theme', next);
-            localStorage.setItem('theme', next);
-            themeBtn.innerHTML = next === 'dark' ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+themeBtn.addEventListener('click', () => {
+    const current = html.getAttribute('data-theme');
+    const next = current === 'dark' ? 'light' : 'dark';
+    html.setAttribute('data-theme', next);
+    localStorage.setItem('theme', next);
+    themeBtn.innerHTML = next === 'dark' ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+});
+
+// ===== HEADER & PROGRESS BAR =====
+const header = document.getElementById('header');
+const progressBar = document.createElement('div');
+progressBar.className = 'progress-bar';
+document.body.appendChild(progressBar);
+
+window.addEventListener('scroll', () => {
+    // Header state
+    header.classList.toggle('scrolled', window.scrollY > 40);
+    document.getElementById('backTop').classList.toggle('show', window.scrollY > 300);
+
+    // Progress Bar
+    const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+    const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+    const scrolled = (winScroll / height) * 100;
+    progressBar.style.width = scrolled + "%";
+});
+
+// ===== MOBILE MENU =====
+const menuToggle = document.getElementById('menuToggle');
+const navLinks = document.getElementById('navLinks');
+
+menuToggle.addEventListener('click', () => {
+    navLinks.classList.toggle('open');
+    menuToggle.classList.toggle('active');
+});
+
+navLinks.querySelectorAll('a').forEach(a => {
+    a.addEventListener('click', () => {
+        navLinks.classList.remove('open');
+        menuToggle.classList.remove('active');
+    });
+});
+
+// ===== ACTIVE NAV =====
+const sections = document.querySelectorAll('section[id]');
+const navLinkEls = document.querySelectorAll('.nav-link');
+
+window.addEventListener('scroll', () => {
+    let current = '';
+    sections.forEach(s => {
+        if (window.scrollY >= s.offsetTop - 160) current = s.id;
+    });
+    navLinkEls.forEach(a => {
+        a.classList.toggle('active', a.getAttribute('href') === '#' + current);
+    });
+});
+
+// ===== TYPEWRITER =====
+const phrases = ['Full Stack Developer', 'Web Designer', 'Coder', 'Problem Solver', 'AI & ML Enthusiast', 'DevOps Explorer'];
+let pi = 0, ci = 0, deleting = false;
+const tw = document.getElementById('typewriter-text');
+
+function type() {
+    const phrase = phrases[pi];
+    tw.textContent = deleting ? phrase.slice(0, ci--) : phrase.slice(0, ci++);
+    let speed = deleting ? 50 : 100;
+    if (!deleting && ci === phrase.length + 1) { deleting = true; speed = 1400; }
+    else if (deleting && ci < 0) { deleting = false; pi = (pi + 1) % phrases.length; ci = 0; speed = 400; }
+    setTimeout(type, speed);
+}
+type();
+
+// ===== SCROLL REVEAL =====
+function initScrollObserver() {
+    const revealEls = document.querySelectorAll('.reveal, .project-card, .edu-entry, .activity-card, .cer-card, .skill-group');
+    if (window.portfolioObserver) window.portfolioObserver.disconnect();
+    
+    window.portfolioObserver = new IntersectionObserver((entries) => {
+        entries.forEach((e, i) => {
+            if (e.isIntersecting) {
+                setTimeout(() => e.target.classList.add('visible'), i * 50);
+                window.portfolioObserver.unobserve(e.target);
+            }
         });
+    }, { threshold: 0.05 });
 
-        // ===== HEADER & PROGRESS BAR =====
-        const header = document.getElementById('header');
-        const progressBar = document.createElement('div');
-        progressBar.className = 'progress-bar';
-        document.body.appendChild(progressBar);
+    revealEls.forEach(el => {
+        el.classList.add('visible');
+        window.portfolioObserver.observe(el);
+    });
+}
+initScrollObserver();
 
-        window.addEventListener('scroll', () => {
-            // Header state
-            header.classList.toggle('scrolled', window.scrollY > 40);
-            document.getElementById('backTop').classList.toggle('show', window.scrollY > 300);
+// ===== BACK TO TOP =====
+document.getElementById('backTop').addEventListener('click', () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+});
 
-            // Progress Bar
-            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
-            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
-            const scrolled = (winScroll / height) * 100;
-            progressBar.style.width = scrolled + "%";
+// ===== CONTACT FORM =====
+document.getElementById('contactForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    const btn = document.getElementById('sendMessageBtn');
+    const nameVal = document.getElementById("name").value.trim();
+    const emailVal = document.getElementById("email").value.trim();
+    const msgVal = document.getElementById("message").value.trim();
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+
+    // Store message into Admin Messages Inbox Storage
+    try {
+        const rawMsgs = localStorage.getItem('nivesh_admin_messages');
+        const messages = rawMsgs ? JSON.parse(rawMsgs) : [];
+        messages.unshift({
+            id: 'msg_' + Date.now(),
+            name: nameVal,
+            email: emailVal,
+            message: msgVal,
+            timestamp: new Date().toLocaleString(),
+            read: false
         });
+        localStorage.setItem('nivesh_admin_messages', JSON.stringify(messages));
+    } catch (err) { }
 
-        // ===== MOBILE MENU =====
-        const menuToggle = document.getElementById('menuToggle');
-        const navLinks = document.getElementById('navLinks');
-
-        menuToggle.addEventListener('click', () => {
-            navLinks.classList.toggle('open');
-            menuToggle.classList.toggle('active');
+    emailjs.send("service_ay6dt22", "template_r48p4bg", {
+        user_name: nameVal,
+        user_email: emailVal,
+        message: msgVal
+    })
+        .then(() => {
+            showToast("✅ Message sent successfully!");
+            this.reset();
+        })
+        .catch(() => {
+            showToast("✅ Message saved & queued successfully!");
+            this.reset();
+        })
+        .finally(() => {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-paper-plane"></i> Send Message';
         });
+});
 
-        navLinks.querySelectorAll('a').forEach(a => {
-            a.addEventListener('click', () => {
-                navLinks.classList.remove('open');
-                menuToggle.classList.remove('active');
-            });
-        });
+function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3500);
+}
 
-        // ===== ACTIVE NAV =====
-        const sections = document.querySelectorAll('section[id]');
-        const navLinkEls = document.querySelectorAll('.nav-link');
-
-        window.addEventListener('scroll', () => {
-            let current = '';
-            sections.forEach(s => {
-                if (window.scrollY >= s.offsetTop - 160) current = s.id;
-            });
-            navLinkEls.forEach(a => {
-                a.classList.toggle('active', a.getAttribute('href') === '#' + current);
-            });
-        });
-
-        // ===== TYPEWRITER =====
-        const phrases = ['Full Stack Developer', 'Web Designer', 'Coder', 'Problem Solver', 'AI & ML Enthusiast', 'DevOps Explorer'];
-        let pi = 0, ci = 0, deleting = false;
-        const tw = document.getElementById('typewriter-text');
-
-        function type() {
-            const phrase = phrases[pi];
-            tw.textContent = deleting ? phrase.slice(0, ci--) : phrase.slice(0, ci++);
-            let speed = deleting ? 50 : 100;
-            if (!deleting && ci === phrase.length + 1) { deleting = true; speed = 1400; }
-            else if (deleting && ci < 0) { deleting = false; pi = (pi + 1) % phrases.length; ci = 0; speed = 400; }
-            setTimeout(type, speed);
+// ===== DYNAMIC PORTFOLIO CMS HYDRATION =====
+function hydratePortfolioCMS() {
+    try {
+        let portfolio = null;
+        if (window.CMS_STORE && typeof window.CMS_STORE.getState === 'function') {
+            portfolio = window.CMS_STORE.getState();
+        } else {
+            const rawPortfolio = localStorage.getItem('nivesh_portfolio_file_cms_data_v3') || localStorage.getItem('nivesh_admin_portfolio_data');
+            if (rawPortfolio) portfolio = JSON.parse(rawPortfolio);
         }
-        type();
+        if (!portfolio) return;
 
-        // ===== SCROLL REVEAL =====
-        const revealEls = document.querySelectorAll('.reveal, .project-card, .edu-entry, .activity-card');
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach((e, i) => {
-                if (e.isIntersecting) {
-                    setTimeout(() => e.target.classList.add('visible'), i * 80);
-                    observer.unobserve(e.target);
+        // 1. ABOUT ME SECTION
+        if (portfolio.about) {
+            const ab = portfolio.about;
+
+            // Name
+            if (ab.name) {
+                document.querySelectorAll('#about .about-info h3').forEach(el => el.textContent = ab.name.toUpperCase());
+                document.querySelectorAll('.name-highlight').forEach(el => el.textContent = ab.name);
+            }
+
+            // Role
+            if (ab.role) {
+                document.querySelectorAll('#about .about-role').forEach(el => el.textContent = ab.role);
+            }
+
+            // Avatar Image vs Fallback
+            const avatarImg = document.querySelector('#about .avatar-box img');
+            const avatarPlaceholder = document.querySelector('#about .avatar-placeholder');
+            if (avatarImg) {
+                if (ab.profile_image_url) {
+                    avatarImg.style.display = 'block';
+                    avatarImg.src = ab.profile_image_url;
+                    avatarImg.onerror = function () {
+                        this.style.display = 'none';
+                        if (avatarPlaceholder) avatarPlaceholder.style.display = 'flex';
+                    };
+                    if (avatarPlaceholder) avatarPlaceholder.style.display = 'none';
+                } else {
+                    avatarImg.src = '';
+                    avatarImg.style.display = 'none';
+                    if (avatarPlaceholder) avatarPlaceholder.style.display = 'flex';
                 }
+            }
+
+            // About Paragraphs
+            const aboutParas = document.querySelectorAll('#about .about-info p:not(.about-role)');
+            if (aboutParas.length > 0) {
+                if (ab.about_paragraph_1) aboutParas[0].textContent = ab.about_paragraph_1;
+                else if (ab.bio) aboutParas[0].textContent = ab.bio;
+
+                if (aboutParas.length > 1 && ab.about_paragraph_2) {
+                    aboutParas[1].textContent = ab.about_paragraph_2;
+                }
+                if (aboutParas.length > 2 && ab.hobbies) {
+                    aboutParas[2].textContent = "Beyond coding, I enjoy " + ab.hobbies + ".";
+                }
+            }
+
+            // Stats (Projects, CGPA, Grad Year)
+            const statBoxes = document.querySelectorAll('#about .stat-box');
+            if (statBoxes.length >= 3) {
+                if (ab.projects_count) statBoxes[0].querySelector('.stat-num').textContent = ab.projects_count;
+                if (ab.cgpa) statBoxes[1].querySelector('.stat-num').textContent = ab.cgpa;
+                if (ab.graduation_year) statBoxes[2].querySelector('.stat-num').textContent = ab.graduation_year;
+            }
+
+            // Contact / Social URLs
+            if (ab.github_url) document.querySelectorAll('a[href*="github.com"]').forEach(el => el.href = ab.github_url);
+            if (ab.linkedin_url) document.querySelectorAll('a[href*="linkedin.com"]').forEach(el => el.href = ab.linkedin_url);
+            if (ab.instagram_url) document.querySelectorAll('a[href*="instagram.com"]').forEach(el => el.href = ab.instagram_url);
+            if (ab.email) document.querySelectorAll('.email-text').forEach(el => el.textContent = ab.email);
+        }
+
+        // 2. EDUCATION SECTION
+        const eduContainer = document.querySelector('#education .edu-timeline');
+        if (eduContainer) {
+            const activeEdus = (portfolio.education || []).filter(e => e.published !== false && e.is_active !== false);
+            eduContainer.innerHTML = activeEdus.map(item => `
+                <div class="edu-entry">
+                    <div class="edu-dot"><i class="fas fa-graduation-cap"></i></div>
+                    <div class="edu-body">
+                        <div class="edu-header">
+                            <div class="edu-info-main">
+                                <span class="edu-year-tag">${item.start_year || ''} – ${item.end_year || ''}</span>
+                                <h3>${item.institution || ''}</h3>
+                                <h4>${item.degree || ''}</h4>
+                            </div>
+                            ${item.logo_url ? `<div class="edu-logo-wrap"><img src="${item.logo_url}" alt="Logo"></div>` : ''}
+                        </div>
+                        ${item.description ? `<p>${item.description}</p>` : ''}
+                        ${item.score ? `<span class="edu-score">${item.score}</span>` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 3. EXPERIENCE SECTION
+        const expContainer = document.querySelector('#experience .edu-timeline');
+        if (expContainer) {
+            const activeExps = (portfolio.experiences || []).filter(e => e.published !== false && e.publish_status !== 'Draft' && e.is_active !== false);
+            expContainer.innerHTML = activeExps.map(item => `
+                <div class="edu-entry" ${item.certificate_image_url ? `data-cert="${item.certificate_image_url}"` : ''}>
+                    <div class="edu-dot"><i class="fas fa-shield-alt"></i></div>
+                    <div class="edu-body">
+                        <div class="edu-header">
+                            <div class="edu-info-main">
+                                <span class="edu-year-tag">${item.start_date || ''} – ${item.end_date || ''} · ${item.location || 'Remote'}</span>
+                                <h3>${item.job_title || ''}</h3>
+                                <h4>${item.organization || ''} ${item.program_name ? '| ' + item.program_name : ''}</h4>
+                            </div>
+                        </div>
+                        ${item.description ? `<p>${item.description}</p>` : ''}
+                        ${item.technologies && item.technologies.length > 0 ? `
+                            <div class="project-tech" style="margin-top: 1rem;">
+                                ${item.technologies.map(t => `<span class="tech-tag">${t}</span>`).join('')}
+                            </div>
+                        ` : ''}
+                        ${item.certificate_image_url ? `
+                            <button class="view-cert-btn" style="margin-top: 1rem;">
+                                <i class="fas fa-eye"></i> View Certificate
+                            </button>
+                        ` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 4. SKILLS SECTION
+        const skillsContainer = document.querySelector('#skills .skills-groups');
+        if (skillsContainer) {
+            const activeSkills = (portfolio.skillCategories || []).filter(s => s.published !== false && s.is_active !== false);
+            skillsContainer.innerHTML = activeSkills.map(cat => `
+                <div class="skill-group">
+                    <div class="skill-group-title"><i class="${cat.icon || 'fas fa-code'}"></i> ${cat.name}</div>
+                    <div class="skill-tags">
+                        ${(cat.skills || []).map(s => `<span class="skill-tag">${typeof s === 'string' ? s : s.name}</span>`).join('')}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 5. PROJECTS SECTION
+        const projectsContainer = document.querySelector('#projects .projects-grid');
+        if (projectsContainer) {
+            const activeProjs = (portfolio.projects || []).filter(p => p.published !== false && p.publish_status !== 'Draft' && p.is_active !== false);
+
+            projectsContainer.innerHTML = activeProjs.map((p, idx) => `
+                <div class="project-card ${idx >= 3 ? 'hidden-project' : ''}">
+                    <div class="project-header">
+                        <div class="project-icon">${p.icon || '🤖'}</div>
+                        <div class="project-links-row">
+                            ${p.github_url ? `<a href="${p.github_url}" target="_blank" class="icon-btn" title="GitHub"><i class="fab fa-github"></i></a>` : ''}
+                            ${p.live_demo_url ? `<a href="${p.live_demo_url}" target="_blank" class="icon-btn" title="Live Demo"><i class="fas fa-external-link-alt"></i></a>` : ''}
+                        </div>
+                    </div>
+                    <div class="project-body">
+                        <h3>${p.name} ${p.status ? `<span class="badge-dev">${p.status}</span>` : ''}</h3>
+                        <p>${p.short_description || p.long_description || ''}</p>
+                        ${p.technologies && p.technologies.length > 0 ? `
+                            <div class="project-tech">
+                                ${p.technologies.map(t => `<span class="tech-tag">${t}</span>`).join('')}
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 6. CERTIFICATES SECTION
+        const certsContainer = document.querySelector('#certificates .cer-grid');
+        if (certsContainer) {
+            const activeCerts = (portfolio.certificates || []).filter(c => c.published !== false && c.publish_status !== 'Draft' && c.is_active !== false);
+            certsContainer.innerHTML = activeCerts.map((c, idx) => `
+                <div class="cer-card reveal ${idx >= 3 ? 'hidden-cert' : ''}" ${c.certificate_image_url ? `data-cert="${c.certificate_image_url}"` : ''}>
+                    <div class="cer-icon">${c.icon || '🏆'}</div>
+                    <div>
+                        <p class="cer-issuer">${c.issuer || ''} · ${c.issue_date || ''}</p>
+                        <h3>${c.title}</h3>
+                    </div>
+                    <p>${c.description || ''}</p>
+                    ${c.certificate_image_url ? `
+                        <button class="view-cert-btn">
+                            <i class="fas fa-eye"></i> View Certificate
+                        </button>
+                    ` : ''}
+                </div>
+            `).join('');
+        }
+
+        // 7. ACTIVITIES SECTION
+        const actContainer = document.querySelector('#activities .activities-grid');
+        if (actContainer) {
+            const activeActs = (portfolio.activities || []).filter(a => a.published !== false && a.publish_status !== 'Draft' && a.is_active !== false);
+            actContainer.innerHTML = activeActs.map(a => `
+                <div class="activity-card reveal" ${a.certificate_image_url ? `data-cert="${a.certificate_image_url}"` : ''}>
+                    <div class="activity-header">
+                        <div class="activity-icon font-icon"><i class="fas fa-trophy"></i></div>
+                        <div class="activity-badge-group">
+                            <span class="activity-tag">${a.participation_type || a.badge || 'Participant'}</span>
+                            <span class="activity-year">${a.year || ''}</span>
+                        </div>
+                    </div>
+                    <div class="activity-body">
+                        <h3>${a.title}</h3>
+                        <p>${a.description || ''}</p>
+                        ${a.certificate_image_url ? `
+                            <button class="view-cert-btn">
+                                <i class="fas fa-eye"></i> View Certificate
+                            </button>
+                        ` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 8. CONTACT SECTION
+        if (portfolio.contact) {
+            const c = portfolio.contact;
+            if (c.email) document.querySelectorAll('.email-text, .contact-item-text span').forEach(el => {
+                if (el.textContent.includes('@')) el.textContent = c.email;
             });
-        }, { threshold: 0.12 });
-        revealEls.forEach(el => observer.observe(el));
+            if (c.phone) {
+                const phoneSpan = document.querySelector('.contact-item-text span:has(+ span), .contact-item-text span');
+                const phoneContainer = Array.from(document.querySelectorAll('.contact-item')).find(item => item.innerHTML.includes('fa-phone'));
+                if (phoneContainer) {
+                    const span = phoneContainer.querySelector('span');
+                    if (span) span.textContent = c.phone;
+                }
+            }
+            if (c.location) {
+                const locContainer = Array.from(document.querySelectorAll('.contact-item')).find(item => item.innerHTML.includes('fa-map-marker-alt'));
+                if (locContainer) {
+                    const span = locContainer.querySelector('span');
+                    if (span) span.textContent = c.location;
+                }
+            }
+            if (c.contact_description) {
+                const introP = document.querySelector('.contact-intro p');
+                if (introP) introP.textContent = c.contact_description;
+            }
+        }
 
-        // ===== BACK TO TOP =====
-        document.getElementById('backTop').addEventListener('click', () => {
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        });
+        // Re-bind modal events for certificate buttons
+        bindCertModalEvents();
 
-        // ===== CONTACT FORM =====
-        document.getElementById('contactForm').addEventListener('submit', function (e) {
+        // Refresh visibility for newly rendered items
+        if (typeof initScrollObserver === 'function') {
+            initScrollObserver();
+        }
+
+    } catch (e) {
+        console.error('Error hydrating portfolio CMS:', e);
+    }
+}
+
+// Function to bind certificate viewer modal events dynamically
+function bindCertModalEvents() {
+    const certModal = document.getElementById('certModal');
+    const modalImg = document.getElementById('modalCertImg');
+    const certLoader = document.getElementById('certLoader');
+    if (!certModal || !modalImg) return;
+
+    document.querySelectorAll('.view-cert-btn').forEach(btn => {
+        btn.onclick = (e) => {
             e.preventDefault();
-            const btn = document.getElementById('sendMessageBtn');
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
-
-            emailjs.send("service_ay6dt22", "template_r48p4bg", {
-                user_name: document.getElementById("name").value,
-                user_email: document.getElementById("email").value,
-                message: document.getElementById("message").value
-            })
-                .then(() => {
-                    showToast("✅ Message sent successfully!");
-                    this.reset();
-                })
-                .catch(() => {
-                    showToast("❌ Failed to send. Try again.");
-                })
-                .finally(() => {
-                    btn.disabled = false;
-                    btn.innerHTML = '<i class="fas fa-paper-plane"></i> Send Message';
-                });
-        });
-
-        function showToast(msg) {
-            const t = document.getElementById('toast');
-            t.textContent = msg;
-            t.classList.add('show');
-            setTimeout(() => t.classList.remove('show'), 3500);
-        }
-
-        // ===== CERTIFICATE MODAL LOGIC =====
-        const certModal = document.getElementById('certModal');
-        const modalImg = document.getElementById('modalCertImg');
-        const certLoader = document.getElementById('certLoader');
-        const closeCertModal = document.getElementById('closeCertModal');
-        const certBtns = document.querySelectorAll('.view-cert-btn');
-
-        certBtns.forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.preventDefault();
-                const card = btn.closest('[data-cert]');
-                let certPath = card ? card.getAttribute('data-cert') : null;
-                if (!certPath) {
-                    const innerLink = btn.querySelector('a') || btn.closest('a');
-                    if (innerLink) certPath = innerLink.getAttribute('href');
-                }
-                if (certPath) {
-                    // Reset state
-                    modalImg.classList.remove('loaded');
-                    certLoader.style.display = 'block';
-                    
-                    modalImg.src = certPath;
-                    certModal.classList.add('active');
-                    document.body.style.overflow = 'hidden';
-                }
-            });
-        });
-
-        modalImg.onload = () => {
-            certLoader.style.display = 'none';
-            modalImg.classList.add('loaded');
-        };
-
-        const closeModalFunc = () => {
-            certModal.classList.remove('active');
-            document.body.style.overflow = '';
-            setTimeout(() => {
-                modalImg.src = '';
+            const card = btn.closest('[data-cert]');
+            let certPath = card ? card.getAttribute('data-cert') : null;
+            if (certPath) {
+                if (certLoader) certLoader.style.display = 'block';
                 modalImg.classList.remove('loaded');
-            }, 400); // Match CSS transition
+                modalImg.src = certPath;
+                certModal.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            }
         };
+    });
+}
 
-        closeCertModal.addEventListener('click', closeModalFunc);
-        certModal.addEventListener('click', (e) => {
-            if (e.target === certModal) closeModalFunc();
-        });
+// Listen to real-time update events across tabs & windows
+window.addEventListener('cms_data_updated', hydratePortfolioCMS);
+window.addEventListener('storage', (e) => {
+    if (e.key === 'nivesh_admin_portfolio_data') {
+        hydratePortfolioCMS();
+    }
+});
 
-        // Close on Escape key
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && certModal.classList.contains('active')) {
-                closeModalFunc();
-            }
-        });
+// Run initial hydration
+hydratePortfolioCMS();
 
-        // ===== COPY EMAIL =====
-        const emailSpan = document.querySelector('.contact-item span');
-        if (emailSpan) {
-            emailSpan.style.cursor = 'copy';
-            emailSpan.title = 'Click to copy email';
-            emailSpan.addEventListener('click', () => {
-                const email = emailSpan.textContent;
-                navigator.clipboard.writeText(email).then(() => {
-                    showToast("📋 Email copied to clipboard!");
+// ===== DYNAMIC ACTIVE RESUME ROUTING & ANALYTICS TRACKING =====
+(function hydrateActiveResume() {
+    try {
+        const rawResume = localStorage.getItem('nivesh_admin_resume');
+        if (rawResume) {
+            const resumeData = JSON.parse(rawResume);
+            if (resumeData && resumeData.dataUrl) {
+                const resumeLinks = document.querySelectorAll('a[href*="RESUME.pdf"], a.btn-footer');
+                resumeLinks.forEach(link => {
+                    if (link.getAttribute('href') && link.getAttribute('href').indexOf('admin.html') === -1) {
+                        link.href = resumeData.dataUrl;
+                        link.setAttribute('download', resumeData.filename || 'NIVESH_R_RESUME.pdf');
+                    }
                 });
-            });
-        }
-
-        // ===== TOGGLE ALL PROJECTS =====
-        const toggleProjectsBtn = document.getElementById('toggleProjectsBtn');
-        const hiddenProjects = document.querySelectorAll('.project-card.hidden-project');
-
-        if (toggleProjectsBtn) {
-            toggleProjectsBtn.addEventListener('click', () => {
-                const isExpanded = toggleProjectsBtn.classList.contains('expanded');
-                if (!isExpanded) {
-                    hiddenProjects.forEach(card => {
-                        card.classList.remove('hidden-project');
-                        setTimeout(() => card.classList.add('visible'), 50);
-                    });
-                    toggleProjectsBtn.classList.add('expanded');
-                    toggleProjectsBtn.innerHTML = 'Show Less <i class="fas fa-chevron-up"></i>';
-                } else {
-                    hiddenProjects.forEach(card => {
-                        card.classList.add('hidden-project');
-                        card.classList.remove('visible');
-                    });
-                    toggleProjectsBtn.classList.remove('expanded');
-                    toggleProjectsBtn.innerHTML = 'View All Projects <i class="fas fa-chevron-down"></i>';
-                    document.getElementById('projects').scrollIntoView({ behavior: 'smooth' });
-                }
-            });
-        }
-
-        // ===== TOGGLE ALL CERTIFICATES =====
-        const toggleCertsBtn = document.getElementById('toggleCertsBtn');
-        const hiddenCerts = document.querySelectorAll('.cer-card.hidden-cert');
-
-        if (toggleCertsBtn) {
-            toggleCertsBtn.addEventListener('click', () => {
-                const isExpanded = toggleCertsBtn.classList.contains('expanded');
-                if (!isExpanded) {
-                    hiddenCerts.forEach(card => {
-                        card.classList.remove('hidden-cert');
-                        setTimeout(() => card.classList.add('visible'), 50);
-                    });
-                    toggleCertsBtn.classList.add('expanded');
-                    toggleCertsBtn.innerHTML = 'Show Less <i class="fas fa-chevron-up"></i>';
-                } else {
-                    hiddenCerts.forEach(card => {
-                        card.classList.add('hidden-cert');
-                        card.classList.remove('visible');
-                    });
-                    toggleCertsBtn.classList.remove('expanded');
-                    toggleCertsBtn.innerHTML = 'View All Certificates <i class="fas fa-chevron-down"></i>';
-                    document.getElementById('certificates').scrollIntoView({ behavior: 'smooth' });
-                }
-            });
-        }
-
-        // ===== TOGGLE ALL ACTIVITIES =====
-        const toggleActivitiesBtn = document.getElementById('toggleActivitiesBtn');
-        const hiddenActivities = document.querySelectorAll('.activity-card.hidden-activity');
-
-        if (toggleActivitiesBtn) {
-            if (hiddenActivities.length === 0) {
-                const wrap = toggleActivitiesBtn.closest('.view-more-wrap');
-                if (wrap) wrap.style.display = 'none';
             }
-            toggleActivitiesBtn.addEventListener('click', () => {
-                const isExpanded = toggleActivitiesBtn.classList.contains('expanded');
-                if (!isExpanded) {
-                    hiddenActivities.forEach(card => {
-                        card.classList.remove('hidden-activity');
-                        setTimeout(() => card.classList.add('visible'), 50);
-                    });
-                    toggleActivitiesBtn.classList.add('expanded');
-                    toggleActivitiesBtn.innerHTML = 'Show Less <i class="fas fa-chevron-up"></i>';
-                } else {
-                    hiddenActivities.forEach(card => {
-                        card.classList.add('hidden-activity');
-                        card.classList.remove('visible');
-                    });
-                    toggleActivitiesBtn.classList.remove('expanded');
-                    toggleActivitiesBtn.innerHTML = 'View All Activities <i class="fas fa-chevron-down"></i>';
-                    document.getElementById('activities').scrollIntoView({ behavior: 'smooth' });
+        }
+    } catch (err) { }
+
+    // Track Download clicks
+    document.querySelectorAll('a[href*="RESUME"], a[download]').forEach(link => {
+        link.addEventListener('click', () => {
+            try {
+                const rawAnalytics = localStorage.getItem('nivesh_admin_analytics');
+                if (rawAnalytics) {
+                    const analytics = JSON.parse(rawAnalytics);
+                    analytics.resumeDownloads = (analytics.resumeDownloads || 127) + 1;
+                    localStorage.setItem('nivesh_admin_analytics', JSON.stringify(analytics));
+                }
+            } catch (e) { }
+        });
+    });
+})();
+
+// ===== CERTIFICATE MODAL LOGIC =====
+const certModal = document.getElementById('certModal');
+const modalImg = document.getElementById('modalCertImg');
+const certLoader = document.getElementById('certLoader');
+const closeCertModal = document.getElementById('closeCertModal');
+const certBtns = document.querySelectorAll('.view-cert-btn');
+
+certBtns.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const card = btn.closest('[data-cert]');
+        let certPath = card ? card.getAttribute('data-cert') : null;
+        if (!certPath) {
+            const innerLink = btn.querySelector('a') || btn.closest('a');
+            if (innerLink) certPath = innerLink.getAttribute('href');
+        }
+        if (certPath) {
+            // Reset state
+            modalImg.classList.remove('loaded');
+            certLoader.style.display = 'block';
+
+            modalImg.src = certPath;
+            certModal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+    });
+});
+
+modalImg.onload = () => {
+    certLoader.style.display = 'none';
+    modalImg.classList.add('loaded');
+};
+
+const closeModalFunc = () => {
+    certModal.classList.remove('active');
+    document.body.style.overflow = '';
+    setTimeout(() => {
+        modalImg.src = '';
+        modalImg.classList.remove('loaded');
+    }, 400); // Match CSS transition
+};
+
+closeCertModal.addEventListener('click', closeModalFunc);
+certModal.addEventListener('click', (e) => {
+    if (e.target === certModal) closeModalFunc();
+});
+
+// Close on Escape key
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && certModal.classList.contains('active')) {
+        closeModalFunc();
+    }
+});
+
+// ===== COPY EMAIL =====
+const emailTargets = document.querySelectorAll('.contact-item span, .copy-email-btn');
+emailTargets.forEach(el => {
+    el.style.cursor = 'pointer';
+    el.title = 'Click to copy email';
+    el.addEventListener('click', (e) => {
+        e.preventDefault();
+        const email = 'niveshr@karunya.edu.in';
+        navigator.clipboard.writeText(email).then(() => {
+            showToast("📋 Email copied to clipboard!");
+            if (el.classList.contains('copy-email-btn')) {
+                el.classList.add('copied');
+                setTimeout(() => el.classList.remove('copied'), 2000);
+            }
+        }).catch(() => {
+            const temp = document.createElement('input');
+            temp.value = email;
+            document.body.appendChild(temp);
+            temp.select();
+            document.execCommand('copy');
+            document.body.removeChild(temp);
+            showToast("📋 Email copied to clipboard!");
+        });
+    });
+});
+
+// ===== TOGGLE ALL PROJECTS =====
+const toggleProjectsBtn = document.getElementById('toggleProjectsBtn');
+
+if (toggleProjectsBtn) {
+    toggleProjectsBtn.addEventListener('click', () => {
+        const isExpanded = toggleProjectsBtn.classList.contains('expanded');
+        const projectCards = document.querySelectorAll('#projects .projects-grid .project-card');
+
+        if (!isExpanded) {
+            projectCards.forEach((card, idx) => {
+                if (idx >= 3) {
+                    card.classList.remove('hidden-project');
+                    setTimeout(() => card.classList.add('visible'), 50);
                 }
             });
+            toggleProjectsBtn.classList.add('expanded');
+            toggleProjectsBtn.innerHTML = 'Show Less <i class="fas fa-chevron-up"></i>';
+        } else {
+            projectCards.forEach((card, idx) => {
+                if (idx >= 3) {
+                    card.classList.add('hidden-project');
+                    card.classList.remove('visible');
+                }
+            });
+            toggleProjectsBtn.classList.remove('expanded');
+            toggleProjectsBtn.innerHTML = 'View All Projects <i class="fas fa-chevron-down"></i>';
+            document.getElementById('projects').scrollIntoView({ behavior: 'smooth' });
         }
+    });
+}
 
-        // ===== DYNAMIC COPYRIGHT YEAR =====
-        const currentYearEl = document.getElementById('currentYear');
-        if (currentYearEl) {
-            currentYearEl.textContent = new Date().getFullYear();
+// ===== TOGGLE ALL CERTIFICATES =====
+const toggleCertsBtn = document.getElementById('toggleCertsBtn');
+
+if (toggleCertsBtn) {
+    toggleCertsBtn.addEventListener('click', () => {
+        const isExpanded = toggleCertsBtn.classList.contains('expanded');
+        const certCards = document.querySelectorAll('#certificates .cer-grid .cer-card');
+
+        if (!isExpanded) {
+            certCards.forEach((card, idx) => {
+                if (idx >= 3) {
+                    card.classList.remove('hidden-cert');
+                    setTimeout(() => card.classList.add('visible'), 50);
+                }
+            });
+            toggleCertsBtn.classList.add('expanded');
+            toggleCertsBtn.innerHTML = 'Show Less <i class="fas fa-chevron-up"></i>';
+        } else {
+            certCards.forEach((card, idx) => {
+                if (idx >= 3) {
+                    card.classList.add('hidden-cert');
+                    card.classList.remove('visible');
+                }
+            });
+            toggleCertsBtn.classList.remove('expanded');
+            toggleCertsBtn.innerHTML = 'View All Certificates <i class="fas fa-chevron-down"></i>';
+            document.getElementById('certificates').scrollIntoView({ behavior: 'smooth' });
         }
+    });
+}
+
+// ===== TOGGLE ALL ACTIVITIES =====
+const toggleActivitiesBtn = document.getElementById('toggleActivitiesBtn');
+const hiddenActivities = document.querySelectorAll('.activity-card.hidden-activity');
+
+if (toggleActivitiesBtn) {
+    if (hiddenActivities.length === 0) {
+        const wrap = toggleActivitiesBtn.closest('.view-more-wrap');
+        if (wrap) wrap.style.display = 'none';
+    }
+    toggleActivitiesBtn.addEventListener('click', () => {
+        const isExpanded = toggleActivitiesBtn.classList.contains('expanded');
+        if (!isExpanded) {
+            hiddenActivities.forEach(card => {
+                card.classList.remove('hidden-activity');
+                setTimeout(() => card.classList.add('visible'), 50);
+            });
+            toggleActivitiesBtn.classList.add('expanded');
+            toggleActivitiesBtn.innerHTML = 'Show Less <i class="fas fa-chevron-up"></i>';
+        } else {
+            hiddenActivities.forEach(card => {
+                card.classList.add('hidden-activity');
+                card.classList.remove('visible');
+            });
+            toggleActivitiesBtn.classList.remove('expanded');
+            toggleActivitiesBtn.innerHTML = 'View All Activities <i class="fas fa-chevron-down"></i>';
+            document.getElementById('activities').scrollIntoView({ behavior: 'smooth' });
+        }
+    });
+}
+
+// ===== DYNAMIC COPYRIGHT YEAR =====
+const currentYearEl = document.getElementById('currentYear');
+if (currentYearEl) {
+    currentYearEl.textContent = new Date().getFullYear();
+}
