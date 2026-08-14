@@ -5,18 +5,18 @@ const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const DATA_FILE = path.join(__dirname, 'data', 'niveshr_portfolio.json');
+const DATA_FILE = path.join(__dirname, 'public', 'data', 'niveshr_portfolio.json');
 
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
-// Serve static files (HTML, CSS, JS, Assets)
-app.use(express.static(__dirname));
+// Serve static files (HTML, CSS, JS, Assets) from public/
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Ensure data directory and baseline niveshr_portfolio.json exist
 function ensureDataFile() {
-    const dataDir = path.join(__dirname, 'data');
+    const dataDir = path.join(__dirname, 'public', 'data');
     if (!fs.existsSync(dataDir)) {
         fs.mkdirSync(dataDir, { recursive: true });
     }

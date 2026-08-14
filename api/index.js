@@ -22,6 +22,9 @@ const ADMIN_PIN      = process.env.ADMIN_PIN;
 const JWT_SECRET     = process.env.JWT_SECRET;
 const PORT           = process.env.PORT || 3000;
 
+// Detect Vercel serverless environment — filesystem is read-only at runtime
+const IS_VERCEL = !!(process.env.VERCEL || process.env.VERCEL_ENV);
+
 // Guard: warn loudly on startup if required env vars are missing
 if (!ADMIN_PASSWORD || !ADMIN_PIN || !JWT_SECRET) {
     console.error(
@@ -32,19 +35,24 @@ if (!ADMIN_PASSWORD || !ADMIN_PIN || !JWT_SECRET) {
 }
 
 // ── Data File Path ────────────────────────────────────────────────────────────
-const DATA_FILE = path.join(__dirname, '..', 'data', 'niveshr_portfolio.json');
+// Points to public/data/ — static files served by Vercel from outputDirectory
+const DATA_FILE = path.join(__dirname, '..', 'public', 'data', 'niveshr_portfolio.json');
 
 // ── Middleware ────────────────────────────────────────────────────────────────
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
-// Serve static files from project root (index.html, admin.html, CSS, JS, assets)
-app.use(express.static(path.join(__dirname, '..')));
+// NOTE: express.static is intentionally omitted here.
+// On Vercel, static files in public/ are served natively by the CDN via
+// outputDirectory in vercel.json — Express static middleware inside a
+// serverless function does not work reliably on Vercel.
+// For local dev, run: node api/index.js  (static files served by server.js separately)
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function ensureDataFile() {
-    const dataDir = path.join(__dirname, '..', 'data');
+    if (IS_VERCEL) return; // Cannot create directories on Vercel runtime
+    const dataDir = path.join(__dirname, '..', 'public', 'data');
     if (!fs.existsSync(dataDir)) {
         fs.mkdirSync(dataDir, { recursive: true });
     }
@@ -80,7 +88,11 @@ function ensureDataFile() {
         fs.writeFileSync(DATA_FILE, JSON.stringify(initialData, null, 2), 'utf8');
     }
 }
-ensureDataFile();
+
+// Only run ensureDataFile in local dev (not on Vercel)
+if (!IS_VERCEL) {
+    ensureDataFile();
+}
 
 function validateSchema(data) {
     if (!data || typeof data !== 'object') {
@@ -160,11 +172,11 @@ app.post('/api/login', (req, res) => {
 
 /**
  * GET /api/portfolio
- * Public — returns the current portfolio data.
+ * Public — returns the current portfolio data from the bundled JSON file.
  */
 app.get('/api/portfolio', (req, res) => {
     try {
-        ensureDataFile();
+        if (!IS_VERCEL) ensureDataFile();
         const content = fs.readFileSync(DATA_FILE, 'utf8');
         res.json(JSON.parse(content));
     } catch (err) {
@@ -176,9 +188,25 @@ app.get('/api/portfolio', (req, res) => {
 
 /**
  * PUT /api/portfolio
- * Protected — saves updated portfolio data to disk.
+ * Protected — saves updated portfolio data.
+ * On Vercel: returns 503 (filesystem is read-only). cmsStore.js handles this
+ *            gracefully — data is already saved to localStorage.
+ * Local dev: writes to public/data/niveshr_portfolio.json on disk.
  */
 app.put('/api/portfolio', authenticateAdmin, (req, res) => {
+    if (IS_VERCEL) {
+        // Vercel serverless filesystem is read-only at runtime.
+        // Changes are persisted in the admin's browser localStorage by cmsStore.js.
+        // To publish globally: export JSON → replace public/data/niveshr_portfolio.json → push to GitHub.
+        return res.status(503).json({
+            success: false,
+            vercel: true,
+            message: 'Server-side file writes are not supported on Vercel serverless. ' +
+                     'Your changes are saved in your browser. ' +
+                     'Use Export JSON → commit → push to GitHub to publish globally.'
+        });
+    }
+
     try {
         const newData = req.body;
         const validation = validateSchema(newData);
@@ -196,8 +224,18 @@ app.put('/api/portfolio', authenticateAdmin, (req, res) => {
 /**
  * POST /api/portfolio/import
  * Protected — imports and validates a portfolio JSON upload.
+ * On Vercel: returns 503 for same reason as PUT.
  */
 app.post('/api/portfolio/import', authenticateAdmin, (req, res) => {
+    if (IS_VERCEL) {
+        return res.status(503).json({
+            success: false,
+            vercel: true,
+            message: 'Server-side file writes are not supported on Vercel serverless. ' +
+                     'Use the Export/Import JSON workflow to manage portfolio data.'
+        });
+    }
+
     try {
         const importedData = req.body;
         const validation = validateSchema(importedData);
@@ -218,7 +256,7 @@ app.post('/api/portfolio/import', authenticateAdmin, (req, res) => {
  */
 app.get('/api/portfolio/export', authenticateAdmin, (req, res) => {
     try {
-        ensureDataFile();
+        if (!IS_VERCEL) ensureDataFile();
         res.download(DATA_FILE, 'niveshr_portfolio.json');
     } catch (err) {
         res.status(500).json({ error: 'Failed to export portfolio data.', details: err.message });
@@ -231,6 +269,10 @@ app.get('/api/portfolio/export', authenticateAdmin, (req, res) => {
 module.exports = app;
 
 if (require.main === module) {
+    // For local dev, also serve static files from public/
+    const staticPath = path.join(__dirname, '..', 'public');
+    app.use(express.static(staticPath));
+
     app.listen(PORT, () => {
         console.log(`\u001b[32m🚀 Nivesh Portfolio API running at http://localhost:${PORT}\u001b[0m`);
         console.log(`   Admin CMS  → http://localhost:${PORT}/admin.html`);

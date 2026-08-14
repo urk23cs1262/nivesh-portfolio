@@ -9,6 +9,9 @@ node_modules/
 # Vercel output
 .vercel/
 
+# Root-level assets/ left over from reorganisation (superseded by public/assets/)
+/assets/
+
 # OS and Log files
 .DS_Store
 Thumbs.db
