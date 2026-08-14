@@ -622,11 +622,11 @@
     }
   ],
   "resume": {
-    "id": "res-1",
+    "id": "res-1786730193824",
     "filename": "NIVESH_R_RESUME.pdf",
-    "file_size": "1.8 MB",
-    "upload_date": "10 Aug 2026",
-    "data_url": "assets/pdf/resume/NIVESH_R_RESUME.pdf",
+    "file_size": "0 KB",
+    "upload_date": "14 Aug 2026",
+    "url": "/assets/resume.pdf",
     "is_active": true
   },
   "navigation": [
@@ -694,5 +694,5 @@
       "is_active": true
     }
   ],
-  "lastUpdated": "2026-08-14T17:54:55.577Z"
+  "lastUpdated": "2026-08-14T17:56:34.332Z"
 }
