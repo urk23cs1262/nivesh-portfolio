@@ -622,11 +622,12 @@
     }
   ],
   "resume": {
-    "id": "res-1786735904258",
-    "filename": "Nivesh_Software_Engineer_Resume.pdf",
-    "file_size": "171 KB",
-    "upload_date": "15 Aug 2026",
-    "url": "/assets/resume.pdf",
+    "id": "res-1786736386937",
+    "filename": "NIVESH_R_RESUME__3_.pdf",
+    "original_name": "NIVESH_R_RESUME (3).pdf",
+    "file_size": "172 KB",
+    "upload_date": "14 Aug 2026",
+    "url": "assets/pdf/resume/NIVESH_R_RESUME.pdf?v=1786736386937",
     "is_active": true
   },
   "resumeHistory": [
@@ -704,5 +705,5 @@
       "is_active": true
     }
   ],
-  "lastUpdated": "2026-08-14T19:31:44.952Z"
+  "lastUpdated": "2026-08-14T19:39:47.080Z"
 }
