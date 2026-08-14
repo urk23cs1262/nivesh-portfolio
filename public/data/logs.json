@@ -1,5 +1,14 @@
 [
   {
+    "action": "Uploaded new Resume PDF: 2 STUDENT NOMINATION FORM-1.pdf",
+    "section": "Resume Manager",
+    "recordTitle": "2 STUDENT NOMINATION FORM-1.pdf",
+    "actionType": "UPDATE",
+    "adminName": "Nivesh R",
+    "timestamp": "15 Aug 2026, 01:24 AM",
+    "id": "log_1786737248421"
+  },
+  {
     "action": "Logged in to Admin Panel",
     "section": "Authentication",
     "recordTitle": "",
