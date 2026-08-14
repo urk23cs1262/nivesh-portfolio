@@ -1,5 +1,14 @@
 [
   {
+    "action": "Reset Portfolio Data to Defaults",
+    "section": "Portfolio CMS",
+    "recordTitle": "Defaults",
+    "actionType": "UPDATE",
+    "adminName": "Nivesh R",
+    "timestamp": "15 Aug 2026, 12:01 AM",
+    "id": "log_1786732296426"
+  },
+  {
     "action": "Updated About Me information and Profile Image",
     "section": "About",
     "recordTitle": "",
