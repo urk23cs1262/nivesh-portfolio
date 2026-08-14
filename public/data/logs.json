@@ -5,6 +5,15 @@
     "recordTitle": "",
     "actionType": "LOGIN",
     "adminName": "Nivesh R",
+    "timestamp": "14 Aug 2026, 11:54 PM",
+    "id": "log_1786731889907"
+  },
+  {
+    "action": "Logged in to Admin Panel",
+    "section": "Authentication",
+    "recordTitle": "",
+    "actionType": "LOGIN",
+    "adminName": "Nivesh R",
     "timestamp": "14 Aug 2026, 11:36 PM",
     "id": "log_1786730796839"
   },
