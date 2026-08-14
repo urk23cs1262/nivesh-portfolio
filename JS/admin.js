@@ -81,15 +81,23 @@
     }
 
     // =========================================================================
-    //  CENTRALIZED AUTHENTICATION STATE MACHINE
+    //  CENTRALIZED AUTHENTICATION STATE MACHINE  (JWT-based)
+    //  Credentials are NEVER validated in browser JS.
+    //  The server (/api/login) validates them and returns a signed JWT.
     // =========================================================================
-    const AUTH_TOKEN_KEY = 'nivesh_admin_auth_token';
-    const AUTH_TOKEN_VAL = 'authenticated';
-    const AUTH_LOGOUT_KEY = 'nivesh_admin_logout_signal'; // cross-tab signal
+    const AUTH_TOKEN_KEY  = 'nivesh_admin_auth_token';       // stores the JWT
+    const AUTH_LOGOUT_KEY = 'nivesh_admin_logout_signal';    // cross-tab signal
+
+    /** Returns the stored JWT, or null if not authenticated. */
+    function getAuthToken() {
+        return sessionStorage.getItem(AUTH_TOKEN_KEY);
+    }
 
     /** Single truth: is the current session authenticated? */
     function isAuthenticated() {
-        return sessionStorage.getItem(AUTH_TOKEN_KEY) === AUTH_TOKEN_VAL;
+        const token = getAuthToken();
+        // A JWT is a three-part base64 string separated by dots
+        return typeof token === 'string' && token.split('.').length === 3;
     }
 
     /** Show the login screen and hide the admin dashboard */
@@ -136,14 +144,13 @@
         }
     }
 
-    /** Central logout — clears all auth state and returns to login immediately */
+    /** Central logout — clears JWT and returns to login immediately */
     function logoutAdmin() {
         if (window.CMS_STORE) {
             window.CMS_STORE.logSecurityEvent('LOGOUT', '127.0.0.1', 'SUCCESS');
             window.CMS_STORE.logAdminActivity('Logged out of Admin Panel', 'Authentication', 'LOGOUT');
         }
         sessionStorage.removeItem(AUTH_TOKEN_KEY);
-        localStorage.removeItem(AUTH_TOKEN_KEY);
         // Signal other open tabs to logout
         localStorage.setItem(AUTH_LOGOUT_KEY, Date.now().toString());
         setTimeout(() => localStorage.removeItem(AUTH_LOGOUT_KEY), 100);
@@ -247,54 +254,66 @@
                 return;
             }
 
-            // ── 3. Credential validation ─────────────────────────────────────
-            const env = window.ENV || {};
-            const validPwd = env.ADMIN_PASSWORD || '';
-            const validPin = env.ADMIN_PIN || '';
+            // ── 3. Server-side credential validation via /api/login ──────────
+            // The actual ADMIN_PASSWORD and ADMIN_PIN are NEVER in browser JS.
+            // The server compares them from process.env and returns a JWT.
+            const submitBtn = document.getElementById('loginSubmitBtn');
+            if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Verifying…'; }
 
-            const isPwdValid = (pwd === validPwd || pwd === '' || pwd === '');
-            const isPinValid = (pin === validPin || pin === '');
+            fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password: pwd, pin: pin })
+            })
+            .then(function (response) {
+                return response.json().then(function (data) {
+                    return { status: response.status, ok: response.ok, data: data };
+                });
+            })
+            .then(function (result) {
+                if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Access Admin Panel'; }
 
-            if (isPwdValid && isPinValid) {
-                // ── SUCCESS ──────────────────────────────────────────────────
-                sessionStorage.setItem(AUTH_TOKEN_KEY, AUTH_TOKEN_VAL);
-                if (window.CMS_STORE) {
-                    window.CMS_STORE.logSecurityEvent('LOGIN', '127.0.0.1', 'SUCCESS');
-                    window.CMS_STORE.logAdminActivity('Logged in to Admin Panel', 'Authentication', 'LOGIN');
-                }
-                hideAlert();
-                clearFieldErrors();
-                showAdminDashboard();
-                switchTab('dashboard');
-                showAdminToast('Welcome back! NIVEN.');
-            } else {
-                // ── WRONG CREDENTIALS ────────────────────────────────────────
-                if (window.CMS_STORE) window.CMS_STORE.logSecurityEvent('FAILED_LOGIN', '127.0.0.1', 'FAILURE');
+                if (result.ok && result.data.success && result.data.token) {
+                    // ── SUCCESS ─────────────────────────────────────────────
+                    sessionStorage.setItem(AUTH_TOKEN_KEY, result.data.token);
+                    if (window.CMS_STORE) {
+                        window.CMS_STORE.logSecurityEvent('LOGIN', 'server', 'SUCCESS');
+                        window.CMS_STORE.logAdminActivity('Logged in to Admin Panel', 'Authentication', 'LOGIN');
+                    }
+                    hideAlert();
+                    clearFieldErrors();
+                    showAdminDashboard();
+                    switchTab('dashboard');
+                    showAdminToast('Welcome back! NIVEN.');
 
-                if (!isPwdValid && !isPinValid) {
-                    showFieldError(pwdInput, pwdError, pwdErrorText, 'Incorrect password entered');
-                    showFieldError(pinInput, pinError, pinErrorText, 'Incorrect PIN entered');
-                    showAlert(
-                        'Invalid Credentials',
-                        'Both the Admin Password and Security PIN you entered are incorrect. Please check and try again.'
-                    );
-                    if (pwdInput) pwdInput.focus();
-                } else if (!isPwdValid) {
-                    showFieldError(pwdInput, pwdError, pwdErrorText, 'This password is incorrect');
-                    showAlert(
-                        'Wrong Admin Password',
-                        'The Admin Password you entered is incorrect. Your Security PIN is correct — please re-check your password.'
-                    );
-                    if (pwdInput) pwdInput.focus();
                 } else {
-                    showFieldError(pinInput, pinError, pinErrorText, 'This PIN is incorrect');
-                    showAlert(
-                        'Wrong Security PIN',
-                        'The Security PIN you entered is incorrect. Your Admin Password is correct — please re-check your PIN.'
-                    );
-                    if (pinInput) pinInput.focus();
+                    // ── SERVER REJECTED ──────────────────────────────────────
+                    if (window.CMS_STORE) window.CMS_STORE.logSecurityEvent('FAILED_LOGIN', 'server', 'FAILURE');
+                    const msg = (result.data && result.data.message) || 'Invalid credentials.';
+
+                    if (msg.toLowerCase().includes('password') && msg.toLowerCase().includes('pin')) {
+                        showFieldError(pwdInput, pwdError, pwdErrorText, 'Incorrect password entered');
+                        showFieldError(pinInput, pinError, pinErrorText, 'Incorrect PIN entered');
+                    } else if (msg.toLowerCase().includes('password')) {
+                        showFieldError(pwdInput, pwdError, pwdErrorText, 'This password is incorrect');
+                        if (pwdInput) pwdInput.focus();
+                    } else if (msg.toLowerCase().includes('pin')) {
+                        showFieldError(pinInput, pinError, pinErrorText, 'This PIN is incorrect');
+                        if (pinInput) pinInput.focus();
+                    }
+
+                    showAlert('Authentication Failed', msg);
                 }
-            }
+            })
+            .catch(function (err) {
+                if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Access Admin Panel'; }
+                console.error('[Admin Login] Network error:', err);
+                showAlert(
+                    'Connection Error',
+                    'Unable to reach the authentication server. Make sure the local server (npm start) is running.',
+                    true
+                );
+            });
         };
 
         if (loginForm) loginForm.addEventListener('submit', doLogin);

@@ -1,8 +1,13 @@
-# Environment and Secret Files
+# Environment and Secret Files — never commit these
 .env
-.env.local
-.env.production
-config.js
+.env.*
+!.env.example
+
+# Node dependencies
+node_modules/
+
+# Vercel output
+.vercel/
 
 # OS and Log files
 .DS_Store

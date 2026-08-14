@@ -6,10 +6,16 @@
 (function () {
     'use strict';
 
-    const STORAGE_KEY = 'nivesh_portfolio_file_cms_data_v3';
-    const LOGS_KEY = 'nivesh_admin_activity_logs';
+    const STORAGE_KEY  = 'nivesh_portfolio_file_cms_data_v3';
+    const LOGS_KEY     = 'nivesh_admin_activity_logs';
     const MESSAGES_KEY = 'nivesh_admin_messages';
     const SECURITY_KEY = 'nivesh_admin_security_logs';
+    const AUTH_TOKEN_KEY = 'nivesh_admin_auth_token'; // JWT stored by admin.js
+
+    /** Returns the stored JWT for authenticated API calls, or empty string. */
+    function getAuthToken() {
+        return sessionStorage.getItem(AUTH_TOKEN_KEY) || '';
+    }
 
     let currentPortfolioData = null;
     let isInitialized = false;
@@ -124,17 +130,20 @@
             bc.close();
         } catch (e) { }
 
-        // Attempt backend API write to server.js (only when running under Express, not Live Server)
+        // Attempt backend API write to api/index.js (when running under Express/Vercel, not Live Server)
         const isExpressServer = window.location.port !== '5500' && window.location.port !== '5501' && window.location.protocol !== 'file:';
         if (isExpressServer) {
             try {
                 fetch('/api/portfolio', {
                     method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + getAuthToken()
+                    },
                     body: JSON.stringify(state)
                 }).then(r => r.ok ? r.json() : null).then(res => {
                     if (res && res.success) {
-                        console.log("Portfolio data persisted to disk via Express server.");
+                        console.log('[CMS] Portfolio data persisted to disk via API.');
                     }
                 }).catch(() => { });
             } catch (e) { }
@@ -296,8 +305,23 @@
             lastUpdated: new Date().toISOString()
         };
 
-        saveState(fullData, "Imported portfolio JSON", "Portfolio CMS", fileName || "niveshr_portfolio.json");
-        return { success: true, data: fullData, message: "Import successful & all changes saved!" };
+        // Also persist import to server disk via authenticated API
+        const isExpressServer = window.location.port !== '5500' && window.location.port !== '5501' && window.location.protocol !== 'file:';
+        if (isExpressServer) {
+            fetch('/api/portfolio/import', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + getAuthToken()
+                },
+                body: JSON.stringify(fullData)
+            }).then(r => r.ok ? r.json() : null).then(res => {
+                if (res && res.success) console.log('[CMS] Import persisted to disk via API.');
+            }).catch(() => {});
+        }
+
+        saveState(fullData, 'Imported portfolio JSON', 'Portfolio CMS', fileName || 'niveshr_portfolio.json');
+        return { success: true, data: fullData, message: 'Import successful & all changes saved!' };
     }
 
     // Expose API globally
