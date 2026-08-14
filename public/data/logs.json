@@ -1,5 +1,14 @@
 [
   {
+    "action": "Logged in to Admin Panel",
+    "section": "Authentication",
+    "recordTitle": "",
+    "actionType": "LOGIN",
+    "adminName": "Nivesh R",
+    "timestamp": "14 Aug 2026, 11:28 PM",
+    "id": "log_1786730282005"
+  },
+  {
     "action": "Imported portfolio JSON",
     "section": "Portfolio CMS",
     "recordTitle": "CORRECT AND PER. niveshr_portfolio.json",
