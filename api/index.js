@@ -233,14 +233,16 @@ function validateSchema(data) {
     return { valid: true };
 }
 
+const router = express.Router();
+
 // =============================================================================
 // PUBLIC ROUTES
 // =============================================================================
 
 /**
- * POST /api/login
+ * POST /api/login or /login
  */
-app.post('/api/login', (req, res) => {
+router.post('/login', (req, res) => {
     const { password, pin } = req.body || {};
     if (!password || !pin) {
         return res.status(400).json({ success: false, message: 'Password and PIN are required.' });
@@ -266,10 +268,10 @@ app.post('/api/login', (req, res) => {
 });
 
 /**
- * GET /api/portfolio
+ * GET /api/portfolio or /portfolio
  * Public — returns current portfolio data from GitHub / local file.
  */
-app.get('/api/portfolio', async (req, res) => {
+router.get('/portfolio', async (req, res) => {
     try {
         const data = await storageReadJSON('public/data/niveshr_portfolio.json');
         if (data) return res.json(data);
@@ -285,10 +287,10 @@ app.get('/api/portfolio', async (req, res) => {
 });
 
 /**
- * POST /api/messages
+ * POST /api/messages or /messages
  * Public — save contact message.
  */
-app.post('/api/messages', async (req, res) => {
+router.post('/messages', async (req, res) => {
     try {
         const { name, email, message } = req.body || {};
         if (!name || !email || !message) {
@@ -312,10 +314,10 @@ app.post('/api/messages', async (req, res) => {
 });
 
 /**
- * PATCH /api/analytics
+ * PATCH /api/analytics or /analytics
  * Public — increment analytics counter.
  */
-app.patch('/api/analytics', async (req, res) => {
+router.patch('/analytics', async (req, res) => {
     try {
         const { field } = req.body || {};
         const allowed = ['pageViews', 'uniqueVisitors', 'resumeDownloads', 'resumeViews'];
@@ -342,10 +344,10 @@ app.patch('/api/analytics', async (req, res) => {
 // =============================================================================
 
 /**
- * PUT /api/portfolio
+ * PUT /api/portfolio or /portfolio
  * Admin — update full portfolio data.
  */
-app.put('/api/portfolio', authenticateAdmin, async (req, res) => {
+router.put('/portfolio', authenticateAdmin, async (req, res) => {
     try {
         const newData = req.body;
         const validation = validateSchema(newData);
@@ -367,10 +369,10 @@ app.put('/api/portfolio', authenticateAdmin, async (req, res) => {
 });
 
 /**
- * POST /api/portfolio/import
+ * POST /api/portfolio/import or /portfolio/import
  * Admin — import JSON file.
  */
-app.post('/api/portfolio/import', authenticateAdmin, async (req, res) => {
+router.post('/portfolio/import', authenticateAdmin, async (req, res) => {
     try {
         const importedData = req.body;
         const validation = validateSchema(importedData);
@@ -392,10 +394,10 @@ app.post('/api/portfolio/import', authenticateAdmin, async (req, res) => {
 });
 
 /**
- * GET /api/portfolio/export
+ * GET /api/portfolio/export or /portfolio/export
  * Admin — export portfolio JSON.
  */
-app.get('/api/portfolio/export', authenticateAdmin, async (req, res) => {
+router.get('/portfolio/export', authenticateAdmin, async (req, res) => {
     try {
         const data = await storageReadJSON('public/data/niveshr_portfolio.json', {});
         res.setHeader('Content-Disposition', 'attachment; filename="niveshr_portfolio.json"');
@@ -411,11 +413,11 @@ app.get('/api/portfolio/export', authenticateAdmin, async (req, res) => {
 // =============================================================================
 
 /**
- * POST /api/upload/resume
+ * POST /api/upload/resume or /upload/resume
  * Admin — upload resume PDF file.
  * Accepts: { filename, fileBase64 }
  */
-app.post('/api/upload/resume', authenticateAdmin, async (req, res) => {
+router.post('/upload/resume', authenticateAdmin, async (req, res) => {
     try {
         const { filename, fileBase64 } = req.body || {};
         if (!fileBase64) {
@@ -469,10 +471,10 @@ app.post('/api/upload/resume', authenticateAdmin, async (req, res) => {
 });
 
 /**
- * DELETE /api/upload/resume
+ * DELETE /api/upload/resume or /upload/resume
  * Admin — delete/deactivate active resume.
  */
-app.delete('/api/upload/resume', authenticateAdmin, async (req, res) => {
+router.delete('/upload/resume', authenticateAdmin, async (req, res) => {
     try {
         const portfolio = await storageReadJSON('public/data/niveshr_portfolio.json', {});
         portfolio.resume = { is_active: false };
@@ -485,11 +487,11 @@ app.delete('/api/upload/resume', authenticateAdmin, async (req, res) => {
 });
 
 /**
- * POST /api/upload/image
+ * POST /api/upload/image or /upload/image
  * Admin — upload project or certificate image.
  * Accepts: { filename, fileBase64, folder }
  */
-app.post('/api/upload/image', authenticateAdmin, async (req, res) => {
+router.post('/upload/image', authenticateAdmin, async (req, res) => {
     try {
         const { filename, fileBase64, folder } = req.body || {};
         if (!fileBase64) {
@@ -527,9 +529,9 @@ app.post('/api/upload/image', authenticateAdmin, async (req, res) => {
 // =============================================================================
 
 /**
- * GET /api/messages
+ * GET /api/messages or /messages
  */
-app.get('/api/messages', authenticateAdmin, async (req, res) => {
+router.get('/messages', authenticateAdmin, async (req, res) => {
     try {
         const messages = await storageReadJSON('public/data/messages.json', []);
         return res.json({ success: true, messages });
@@ -539,9 +541,9 @@ app.get('/api/messages', authenticateAdmin, async (req, res) => {
 });
 
 /**
- * PATCH /api/messages/:id
+ * PATCH /api/messages/:id or /messages/:id
  */
-app.patch('/api/messages/:id', authenticateAdmin, async (req, res) => {
+router.patch('/messages/:id', authenticateAdmin, async (req, res) => {
     try {
         const { status } = req.body || {};
         const messages = await storageReadJSON('public/data/messages.json', []);
@@ -557,9 +559,9 @@ app.patch('/api/messages/:id', authenticateAdmin, async (req, res) => {
 });
 
 /**
- * DELETE /api/messages/:id
+ * DELETE /api/messages/:id or /messages/:id
  */
-app.delete('/api/messages/:id', authenticateAdmin, async (req, res) => {
+router.delete('/messages/:id', authenticateAdmin, async (req, res) => {
     try {
         let messages = await storageReadJSON('public/data/messages.json', []);
         messages = messages.filter(m => m.id !== req.params.id);
@@ -575,9 +577,9 @@ app.delete('/api/messages/:id', authenticateAdmin, async (req, res) => {
 // =============================================================================
 
 /**
- * GET /api/logs
+ * GET /api/logs or /logs
  */
-app.get('/api/logs', authenticateAdmin, async (req, res) => {
+router.get('/logs', authenticateAdmin, async (req, res) => {
     try {
         const logs = await storageReadJSON('public/data/logs.json', []);
         return res.json({ success: true, logs });
@@ -587,9 +589,9 @@ app.get('/api/logs', authenticateAdmin, async (req, res) => {
 });
 
 /**
- * POST /api/logs
+ * POST /api/logs or /logs
  */
-app.post('/api/logs', authenticateAdmin, async (req, res) => {
+router.post('/logs', authenticateAdmin, async (req, res) => {
     try {
         const logEntry = req.body || {};
         const logs = await storageReadJSON('public/data/logs.json', []);
@@ -603,9 +605,9 @@ app.post('/api/logs', authenticateAdmin, async (req, res) => {
 });
 
 /**
- * DELETE /api/logs
+ * DELETE /api/logs or /logs
  */
-app.delete('/api/logs', authenticateAdmin, async (req, res) => {
+router.delete('/logs', authenticateAdmin, async (req, res) => {
     try {
         await storageWrite('public/data/logs.json', [], `Clear audit logs`);
         return res.json({ success: true, message: 'Logs cleared.' });
@@ -619,9 +621,9 @@ app.delete('/api/logs', authenticateAdmin, async (req, res) => {
 // =============================================================================
 
 /**
- * GET /api/analytics
+ * GET /api/analytics or /analytics
  */
-app.get('/api/analytics', authenticateAdmin, async (req, res) => {
+router.get('/analytics', authenticateAdmin, async (req, res) => {
     try {
         const analytics = await storageReadJSON('public/data/analytics.json', {
             pageViews: 1247,
@@ -640,10 +642,10 @@ app.get('/api/analytics', authenticateAdmin, async (req, res) => {
 // =============================================================================
 
 /**
- * POST /api/migrate
+ * POST /api/migrate or /migrate
  * Admin — Migrate localStorage data payload to GitHub/local storage.
  */
-app.post('/api/migrate', authenticateAdmin, async (req, res) => {
+router.post('/migrate', authenticateAdmin, async (req, res) => {
     try {
         const { portfolioData, messages, logs, analytics } = req.body || {};
         const results = {};
@@ -675,7 +677,7 @@ app.post('/api/migrate', authenticateAdmin, async (req, res) => {
 // STATUS / HEALTH ROUTE
 // =============================================================================
 
-app.get('/api/status', (req, res) => {
+router.get('/status', (req, res) => {
     res.json({
         api: 'ok',
         timestamp: new Date().toISOString(),
@@ -687,6 +689,10 @@ app.get('/api/status', (req, res) => {
         }
     });
 });
+
+// Mount router on both /api prefix and root / prefix to ensure compatibility
+app.use('/api', router);
+app.use('/', router);
 
 // Serve static public files in local dev mode
 const staticPath = path.join(__dirname, '..', 'public');
