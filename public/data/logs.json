@@ -1,5 +1,14 @@
 [
   {
+    "action": "Uploaded new Resume PDF: NIVESH_R_RESUME.pdf",
+    "section": "Resume Manager",
+    "recordTitle": "NIVESH_R_RESUME.pdf",
+    "actionType": "UPDATE",
+    "adminName": "Nivesh R",
+    "timestamp": "15 Aug 2026, 01:26 AM",
+    "id": "log_1786737375939"
+  },
+  {
     "action": "Logged in to Admin Panel",
     "section": "Authentication",
     "recordTitle": "",
