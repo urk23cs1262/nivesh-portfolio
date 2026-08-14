@@ -1,6 +1,6 @@
 {
   "about": {
-    "name": "Nivesh R",
+    "name": "Nivesh Rwwww",
     "role": "CSE Student � Full Stack Developer � AI Enthusiast",
     "short_description": "B.Tech CSE student at Karunya Institute of Technology and Science. Building full-stack apps, AI-powered platforms & IoT systems.",
     "about_paragraph_1": "I'm a passionate B.Tech Computer Science student at Karunya Institute of Technology and Science (2023-27), specializing in building full-stack web applications, AI-powered platforms, and IoT systems.",
@@ -694,5 +694,15 @@
       "is_active": true
     }
   ],
-  "lastUpdated": "2026-08-14T18:27:28.517Z"
+  "lastUpdated": "2026-08-14T18:31:18.982Z",
+  "resumeHistory": [
+    {
+      "id": "res-1786732047807",
+      "filename": "NIVESH_R_RESUME_v2.pdf",
+      "file_size": "171 KB",
+      "upload_date": "14 Aug 2026",
+      "url": "/assets/resume.pdf",
+      "is_active": true
+    }
+  ]
 }
