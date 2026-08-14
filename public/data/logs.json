@@ -1,5 +1,14 @@
 [
   {
+    "action": "Logged out of Admin Panel",
+    "section": "Authentication",
+    "recordTitle": "",
+    "actionType": "LOGOUT",
+    "adminName": "Nivesh R",
+    "timestamp": "15 Aug 2026, 12:15 AM",
+    "id": "log_1786733129966"
+  },
+  {
     "action": "Reset Portfolio Data to Defaults",
     "section": "Portfolio CMS",
     "recordTitle": "Defaults",
