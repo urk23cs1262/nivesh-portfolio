@@ -622,12 +622,12 @@
     }
   ],
   "resume": {
-    "id": "res-1786736746129",
-    "filename": "NIVESH_R_RESUME__4_.pdf",
-    "original_name": "NIVESH_R_RESUME (4).pdf",
+    "id": "res-1786736788220",
+    "filename": "NIVESH_R_RESUME.pdf",
+    "original_name": "NIVESH_R_RESUME.pdf",
     "file_size": "172 KB",
     "upload_date": "14 Aug 2026",
-    "url": "assets/pdf/resume/NIVESH_R_RESUME.pdf?v=1786736746129",
+    "url": "assets/pdf/resume/NIVESH_R_RESUME.pdf?v=1786736788220",
     "is_active": true
   },
   "resumeHistory": [
@@ -705,5 +705,5 @@
       "is_active": true
     }
   ],
-  "lastUpdated": "2026-08-14T19:45:48.494Z"
+  "lastUpdated": "2026-08-14T19:46:28.351Z"
 }
