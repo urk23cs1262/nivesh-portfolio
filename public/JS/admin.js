@@ -178,6 +178,28 @@
     });
 
     function bindEvents() {
+        // Setup Password & PIN Eye Visibility Toggles
+        const setupPwdToggle = (btnId, inputId) => {
+            const btn = document.getElementById(btnId);
+            const input = document.getElementById(inputId);
+            if (btn && input) {
+                btn.onclick = (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const isPwd = input.type === 'password';
+                    input.type = isPwd ? 'text' : 'password';
+                    const icon = btn.querySelector('i');
+                    if (icon) {
+                        icon.className = isPwd ? 'fas fa-eye-slash' : 'fas fa-eye';
+                    }
+                    btn.setAttribute('title', isPwd ? 'Hide' : 'Show');
+                };
+            }
+        };
+
+        setupPwdToggle('toggleAdminPasswordBtn', 'adminPassword');
+        setupPwdToggle('toggleAdminPinBtn', 'adminPin');
+
         // Login
         const loginForm = document.getElementById('adminLoginForm');
         const loginSubmitBtn = document.getElementById('loginSubmitBtn');
@@ -478,7 +500,7 @@
         if (target) target.classList.add('active');
     }
 
-    function refreshAllDashboardData() {
+    async function refreshAllDashboardData() {
         if (!window.CMS_STORE) return;
         const data = window.CMS_STORE.getState();
 
@@ -494,8 +516,21 @@
         renderSocialCms(data.socialLinks);
         renderResumeCms(data.resume);
         renderNavigationCms(data.navigation);
-        renderMessagesCms(window.CMS_STORE.getMessages());
-        renderActivityLogs(window.CMS_STORE.getAdminLogs());
+
+        // Messages and logs are async (from Storage API)
+        try {
+            const messages = await window.CMS_STORE.getMessages();
+            renderMessagesCms(messages);
+            // Update unread badge after async load
+            const unreadCount = messages.filter(m => m.status === 'unread').length;
+            const unreadEl = document.getElementById('dashUnreadMsgs');
+            if (unreadEl) unreadEl.textContent = unreadCount;
+        } catch (e) { renderMessagesCms([]); }
+
+        try {
+            const logs = await window.CMS_STORE.getAdminLogs();
+            renderActivityLogs(logs);
+        } catch (e) { renderActivityLogs([]); }
     }
 
     function updateOverviewMetrics(data) {
@@ -504,9 +539,8 @@
             if (el) el.textContent = val;
         };
 
-        const msgs = window.CMS_STORE ? window.CMS_STORE.getMessages() : [];
-        const unread = msgs.filter(m => m.status === 'unread').length;
-        setVal('dashUnreadMsgs', unread);
+        // Unread count is updated async in refreshAllDashboardData after getMessages() resolves
+        setVal('dashUnreadMsgs', '...');
 
         setVal('dashProjectsCount', data.projects ? data.projects.length : 0);
         setVal('dashCertsCount', data.certificates ? data.certificates.length : 0);
@@ -1597,26 +1631,53 @@
         }
 
         if (imgFileInput) {
-            imgFileInput.onchange = function (e) {
+            imgFileInput.onchange = async function (e) {
                 const files = Array.from(e.target.files || []);
                 if (files.length === 0) return;
 
-                let loadedCount = 0;
-                files.forEach(file => {
-                    const reader = new FileReader();
-                    reader.onload = async function (evt) {
-                        const rawDataUrl = evt.target.result;
-                        const compressedDataUrl = await compressImage(rawDataUrl, 1200, 0.82);
-                        currentProjectImages.push(compressedDataUrl);
-                        loadedCount++;
-                        if (loadedCount === files.length) {
-                            renderProjectImagesPreview();
-                            showAdminToast(`Uploaded & optimized ${files.length} image(s)!`);
-                            imgFileInput.value = '';
+                showAdminToast(`Uploading ${files.length} image(s)...`);
+
+                let successCount = 0;
+                const token = sessionStorage.getItem('nivesh_admin_auth_token') || '';
+
+                for (const file of files) {
+                    try {
+                        const fileBase64 = await new Promise((resolve, reject) => {
+                            const reader = new FileReader();
+                            reader.onload = evt => resolve(evt.target.result);
+                            reader.onerror = reject;
+                            reader.readAsDataURL(file);
+                        });
+
+                        const res = await fetch('/api/upload/image', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': 'Bearer ' + token
+                            },
+                            body: JSON.stringify({
+                                filename: file.name,
+                                fileBase64,
+                                folder: 'projects'
+                            })
+                        });
+
+                        const json = await res.json();
+
+                        if (json && json.success && json.url) {
+                            currentProjectImages.push(json.url);
+                            successCount++;
+                        } else {
+                            showAdminToast('Failed to upload ' + file.name + ': ' + (json.message || 'error'), 'error');
                         }
-                    };
-                    reader.readAsDataURL(file);
-                });
+                    } catch (err) {
+                        showAdminToast('Upload error: ' + err.message, 'error');
+                    }
+                }
+
+                renderProjectImagesPreview();
+                showAdminToast(`Uploaded ${successCount} image(s)!`);
+                imgFileInput.value = '';
             };
         }
 
@@ -1887,48 +1948,159 @@
         refreshAllDashboardData();
     };
 
-    // RESUME CMS
+    // RESUME CMS - Single Resume Handler
+    window.previewResume = function (url, filename) {
+        const frame = document.getElementById('adminPdfFrame');
+        const previewTitle = document.getElementById('previewPdfTitle');
+        const downloadBtn = document.getElementById('downloadPreviewPdfBtn');
+
+        let cleanUrl = url || 'assets/pdf/resume/NIVESH_R_RESUME.pdf';
+        if (!cleanUrl.includes('?v=')) {
+            cleanUrl += '?v=' + Date.now();
+        }
+
+        if (frame) frame.src = cleanUrl;
+        if (previewTitle) previewTitle.textContent = filename || 'NIVESH_R_RESUME.pdf';
+        if (downloadBtn) {
+            downloadBtn.href = cleanUrl;
+            downloadBtn.setAttribute('download', filename || 'NIVESH_R_RESUME.pdf');
+        }
+    };
+
     function renderResumeCms(resume) {
-        if (!resume) return;
+        if (!resume) resume = {};
         const nameEl = document.getElementById('activeResumeName');
         const dateEl = document.getElementById('activeResumeDate');
         const frame = document.getElementById('adminPdfFrame');
+        const sizeEl = document.getElementById('activeResumeSize');
+        const previewTitle = document.getElementById('previewPdfTitle');
+        const downloadBtn = document.getElementById('downloadPreviewPdfBtn');
 
-        if (nameEl) nameEl.textContent = resume.filename || 'NIVESH_R_RESUME.pdf';
+        const activeFilename = resume.filename || resume.original_name || 'NIVESH_R_RESUME.pdf';
+        const activeUrl = resume.url || ('assets/pdf/resume/NIVESH_R_RESUME.pdf?v=' + Date.now());
+
+        if (nameEl) nameEl.textContent = activeFilename;
         if (dateEl) dateEl.textContent = `Uploaded: ${resume.upload_date || 'Recent'}`;
-        if (frame && resume.data_url) frame.src = resume.data_url;
+        if (sizeEl && resume.file_size) sizeEl.textContent = resume.file_size;
+
+        if (frame) frame.src = activeUrl;
+        if (previewTitle) previewTitle.textContent = activeFilename;
+        if (downloadBtn) {
+            downloadBtn.href = activeUrl;
+            downloadBtn.setAttribute('download', activeFilename);
+        }
+
+        const btnPreviewActive = document.getElementById('btnPreviewActive');
+        if (btnPreviewActive) {
+            btnPreviewActive.onclick = function () {
+                window.previewResume(activeUrl, activeFilename);
+            };
+        }
 
         const fileInput = document.getElementById('resumeFileInput');
         const dropZone = document.getElementById('resumeDropZone');
 
-        if (fileInput && dropZone) {
-            dropZone.onclick = () => fileInput.click();
+        if (fileInput) {
             fileInput.onchange = function (e) {
                 const file = e.target.files[0];
+                if (file) {
+                    processResumePdfUpload(file);
+                }
+                fileInput.value = '';
+            };
+
+            if (dropZone) {
+                dropZone.ondragover = (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    dropZone.classList.add('dragover');
+                };
+
+                dropZone.ondragleave = (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    dropZone.classList.remove('dragover');
+                };
+
+                dropZone.ondrop = (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    dropZone.classList.remove('dragover');
+                    const files = e.dataTransfer ? e.dataTransfer.files : null;
+                    if (files && files.length > 0) {
+                        processResumePdfUpload(files[0]);
+                    }
+                };
+            }
+
+            async function processResumePdfUpload(file) {
                 if (!file) return;
 
-                if (file.type !== 'application/pdf') {
-                    alert("Please select a valid PDF file!");
+                // 1. Strict PDF format validation (mime-type and filename extension)
+                const isPdf = (file.type === 'application/pdf' || 
+                              file.type.includes('pdf') || 
+                              file.name.toLowerCase().endsWith('.pdf'));
+
+                if (!isPdf) {
+                    showAdminToast('Invalid file format! Please select a PDF file (.pdf only).', 'error');
                     return;
                 }
 
-                const reader = new FileReader();
-                reader.onload = function (evt) {
-                    const state = window.CMS_STORE.getState();
-                    state.resume = {
-                        id: 'res-' + Date.now(),
-                        filename: file.name,
-                        file_size: (file.size / (1024 * 1024)).toFixed(2) + ' MB',
-                        upload_date: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
-                        data_url: evt.target.result,
-                        is_active: true
+                // 2. Strict 5MB file size limit check
+                const MAX_SIZE = 5 * 1024 * 1024;
+                if (file.size > MAX_SIZE) {
+                    showAdminToast('File size exceeds the 5MB maximum allowed limit!', 'error');
+                    return;
+                }
+
+                showAdminToast('Uploading resume PDF...');
+                if (window.updateSaveIndicator) window.updateSaveIndicator(true);
+
+                try {
+                    const reader = new FileReader();
+                    reader.onload = async function (evt) {
+                        const fileBase64 = evt.target.result;
+                        const token = sessionStorage.getItem('nivesh_admin_auth_token') || '';
+
+                        const res = await fetch('/api/upload/resume', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': 'Bearer ' + token
+                            },
+                            body: JSON.stringify({
+                                filename: file.name,
+                                fileBase64
+                            })
+                        });
+
+                        const json = await res.json();
+
+                        if (json && json.success && json.resume) {
+                            const currentState = window.CMS_STORE.getState();
+                            currentState.resume = json.resume;
+
+                            await window.CMS_STORE.saveState(
+                                currentState,
+                                'Uploaded new Resume PDF: ' + file.name,
+                                'Resume Manager',
+                                file.name
+                            );
+
+                            window.previewResume(json.resume.url, json.resume.filename, true);
+                            showAdminToast('Resume uploaded & portfolio updated!');
+                            refreshAllDashboardData();
+                        } else {
+                            showAdminToast('Upload failed: ' + (json.message || 'Unknown error'), 'error');
+                        }
+                        if (window.updateSaveIndicator) window.updateSaveIndicator(false);
                     };
-                    window.CMS_STORE.saveState(state, "Uploaded new Resume PDF: " + file.name, "Resume");
-                    showAdminToast("Resume uploaded & updated!");
-                    refreshAllDashboardData();
-                };
-                reader.readAsDataURL(file);
-            };
+                    reader.readAsDataURL(file);
+                } catch (err) {
+                    showAdminToast('Resume upload error: ' + err.message, 'error');
+                    if (window.updateSaveIndicator) window.updateSaveIndicator(false);
+                }
+            }
         }
     }
 
@@ -1985,18 +2157,18 @@
         if (fullList) fullList.innerHTML = html;
     }
 
-    window.toggleMsgRead = function (id) {
-        const msgs = window.CMS_STORE.getMessages();
+    window.toggleMsgRead = async function (id) {
+        const msgs = await window.CMS_STORE.getMessages();
         const msg = msgs.find(m => m.id === id);
         if (msg) {
-            window.CMS_STORE.updateMessageStatus(id, msg.status === 'unread' ? 'read' : 'unread');
+            await window.CMS_STORE.updateMessageStatus(id, msg.status === 'unread' ? 'read' : 'unread');
             refreshAllDashboardData();
         }
     };
 
-    window.deleteMsg = function (id) {
-        if (!confirm("Delete message?")) return;
-        window.CMS_STORE.deleteMessage(id);
+    window.deleteMsg = async function (id) {
+        if (!confirm('Delete message?')) return;
+        await window.CMS_STORE.deleteMessage(id);
         refreshAllDashboardData();
     };
 
@@ -2113,12 +2285,12 @@
         if (cancelClearBtn) cancelClearBtn.onclick = closeClearModal;
 
         if (confirmClearBtn) {
-            confirmClearBtn.onclick = () => {
+            confirmClearBtn.onclick = async () => {
                 closeClearModal();
                 if (window.CMS_STORE && window.CMS_STORE.clearAdminLogs) {
-                    window.CMS_STORE.clearAdminLogs();
+                    await window.CMS_STORE.clearAdminLogs();
                 }
-                showAdminToast("Audit logs cleared successfully.");
+                showAdminToast('Audit logs cleared successfully.');
                 refreshAllDashboardData();
             };
         }
@@ -2154,19 +2326,19 @@
                 if (fileNameLabel) fileNameLabel.textContent = file.name;
 
                 const reader = new FileReader();
-                reader.onload = function (evt) {
+                reader.onload = async function (evt) {
                     try {
                         const jsonData = JSON.parse(evt.target.result);
                         if (!window.CMS_STORE) return;
 
-                        const result = window.CMS_STORE.importJSON(jsonData, file.name);
+                        const result = await window.CMS_STORE.importJSON(jsonData, file.name);
 
                         if (result.success) {
                             if (statusBadge) {
-                                statusBadge.textContent = "Valid Schema";
-                                statusBadge.style.background = "rgba(16, 185, 129, 0.15)";
-                                statusBadge.style.color = "#10b981";
-                                statusBadge.style.border = "1px solid rgba(16, 185, 129, 0.3)";
+                                statusBadge.textContent = 'Valid Schema';
+                                statusBadge.style.background = 'rgba(16, 185, 129, 0.15)';
+                                statusBadge.style.color = '#10b981';
+                                statusBadge.style.border = '1px solid rgba(16, 185, 129, 0.3)';
                             }
                             if (lastSavedLabel) {
                                 const now = new Date();
@@ -2174,27 +2346,27 @@
                             }
                             if (saveIndicator) {
                                 saveIndicator.innerHTML = '<i class="fas fa-check-circle"></i> All changes saved';
-                                saveIndicator.style.background = "rgba(16, 185, 129, 0.15)";
-                                saveIndicator.style.color = "#10b981";
+                                saveIndicator.style.background = 'rgba(16, 185, 129, 0.15)';
+                                saveIndicator.style.color = '#10b981';
                             }
-                            showAdminToast(result.message || "Import successful & all changes saved!");
+                            showAdminToast(result.message || 'Import successful & all changes saved!');
                             refreshAllDashboardData();
                         } else {
                             if (statusBadge) {
-                                statusBadge.textContent = "Invalid Schema";
-                                statusBadge.style.background = "rgba(239, 68, 68, 0.15)";
-                                statusBadge.style.color = "#ef4444";
-                                statusBadge.style.border = "1px solid rgba(239, 68, 68, 0.3)";
+                                statusBadge.textContent = 'Invalid Schema';
+                                statusBadge.style.background = 'rgba(239, 68, 68, 0.15)';
+                                statusBadge.style.color = '#ef4444';
+                                statusBadge.style.border = '1px solid rgba(239, 68, 68, 0.3)';
                             }
-                            alert("JSON Import Validation Error: " + (result.error || "Malformed portfolio JSON schema"));
+                            alert('JSON Import Validation Error: ' + (result.error || 'Malformed portfolio JSON schema'));
                         }
                     } catch (parseErr) {
                         if (statusBadge) {
-                            statusBadge.textContent = "Syntax Error";
-                            statusBadge.style.background = "rgba(239, 68, 68, 0.15)";
-                            statusBadge.style.color = "#ef4444";
+                            statusBadge.textContent = 'Syntax Error';
+                            statusBadge.style.background = 'rgba(239, 68, 68, 0.15)';
+                            statusBadge.style.color = '#ef4444';
                         }
-                        alert("Invalid JSON file syntax: " + parseErr.message);
+                        alert('Invalid JSON file syntax: ' + parseErr.message);
                     }
                 };
                 reader.readAsText(file);
@@ -2227,11 +2399,11 @@
         if (cancelResetBtn) cancelResetBtn.onclick = closeResetModal;
 
         if (confirmResetBtn) {
-            confirmResetBtn.onclick = () => {
+            confirmResetBtn.onclick = async () => {
                 closeResetModal();
                 if (window.CMS_STORE && window.CMS_STORE.resetToDefaults) {
-                    window.CMS_STORE.resetToDefaults();
-                    showAdminToast("Portfolio reset to defaults.");
+                    await window.CMS_STORE.resetToDefaults();
+                    showAdminToast('Portfolio reset to defaults.');
                     refreshAllDashboardData();
                 }
             };
@@ -2263,5 +2435,7 @@
         }
     };
 
-    document.addEventListener('DOMContentLoaded', initAdmin);
+    document.addEventListener('DOMContentLoaded', () => {
+        initAdmin();
+    });
 })();

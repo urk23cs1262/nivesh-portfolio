@@ -1,0 +1,10 @@
+[
+  {
+    "id": "msg_1786729073779",
+    "name": "Test Visitor",
+    "email": "visitor@example.com",
+    "message": "Hello from test script",
+    "status": "unread",
+    "createdAt": "2026-08-14T17:37:53.779Z"
+  }
+]

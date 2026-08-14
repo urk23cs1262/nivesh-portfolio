@@ -1875,10 +1875,17 @@
             padding-left: 4px;
         }
 
+        .footer-col ul li a.admin-link,
+        .admin-link {
+            opacity: 0.45;
+            transition: all 0.25s ease;
+        }
+
         .footer-col ul li a.admin-link:hover,
         .footer-col ul li a[href="admin.html"]:hover,
         .admin-link:hover {
-            color: #2563eb !important;
+            opacity: 1;
+            color: var(--accent) !important;
             padding-left: 4px;
         }
 

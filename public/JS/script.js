@@ -61,43 +61,13 @@ emailjs.init("Tw3LSYbX8-nZodC-t");
 📄 Landing Page: ${window.location.href}
 `.trim();
 
-        // Sync with Admin Analytics Storage
+        // Sync with Admin Analytics via API (MongoDB)
         try {
-            const rawAnalytics = localStorage.getItem('nivesh_admin_analytics');
-            let analytics = rawAnalytics ? JSON.parse(rawAnalytics) : {
-                totalVisitors: 0,
-                pageViews: 0,
-                resumeDownloads: 0,
-                resumeViews: 0,
-                topPages: [{ name: 'Home', views: 0 }, { name: 'Projects', views: 0 }, { name: 'Resume', views: 0 }, { name: 'About', views: 0 }],
-                visitorLogs: [],
-                dailyStats: [
-                    { day: 'Mon', count: 0 },
-                    { day: 'Tue', count: 0 },
-                    { day: 'Wed', count: 0 },
-                    { day: 'Thu', count: 0 },
-                    { day: 'Fri', count: 0 },
-                    { day: 'Sat', count: 0 },
-                    { day: 'Sun', count: 0 }
-                ]
-            };
-
-            analytics.totalVisitors = (analytics.totalVisitors || 0) + 1;
-            analytics.pageViews = (analytics.pageViews || 0) + 1;
-
-            if (!analytics.visitorLogs) analytics.visitorLogs = [];
-            analytics.visitorLogs.unshift({
-                time: visitTime,
-                ip: ipData.ip || '103.110.170.42',
-                location: locationStr,
-                os: os,
-                browser: browser,
-                referrer: referrer,
-                page: window.location.hash || 'Home'
-            });
-
-            if (analytics.visitorLogs.length > 50) analytics.visitorLogs.pop();
-            localStorage.setItem('nivesh_admin_analytics', JSON.stringify(analytics));
+            fetch('/api/analytics', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ field: 'pageViews' })
+            }).catch(() => {});
         } catch (e) { }
 
         if (typeof emailjs !== 'undefined') {
@@ -220,39 +190,31 @@ document.getElementById('backTop').addEventListener('click', () => {
 document.getElementById('contactForm').addEventListener('submit', function (e) {
     e.preventDefault();
     const btn = document.getElementById('sendMessageBtn');
-    const nameVal = document.getElementById("name").value.trim();
-    const emailVal = document.getElementById("email").value.trim();
-    const msgVal = document.getElementById("message").value.trim();
+    const nameVal = document.getElementById('name').value.trim();
+    const emailVal = document.getElementById('email').value.trim();
+    const msgVal = document.getElementById('message').value.trim();
 
     btn.disabled = true;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
 
-    // Store message into Admin Messages Inbox Storage
-    try {
-        const rawMsgs = localStorage.getItem('nivesh_admin_messages');
-        const messages = rawMsgs ? JSON.parse(rawMsgs) : [];
-        messages.unshift({
-            id: 'msg_' + Date.now(),
-            name: nameVal,
-            email: emailVal,
-            message: msgVal,
-            timestamp: new Date().toLocaleString(),
-            read: false
-        });
-        localStorage.setItem('nivesh_admin_messages', JSON.stringify(messages));
-    } catch (err) { }
+    // Save message to MongoDB via API
+    fetch('/api/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: nameVal, email: emailVal, message: msgVal })
+    }).catch(() => {}); // fire-and-forget; EmailJS is the user-facing confirmation
 
-    emailjs.send("service_ay6dt22", "template_r48p4bg", {
+    emailjs.send('service_ay6dt22', 'template_r48p4bg', {
         user_name: nameVal,
         user_email: emailVal,
         message: msgVal
     })
         .then(() => {
-            showToast("✅ Message sent successfully!");
+            showToast('✅ Message sent successfully!');
             this.reset();
         })
         .catch(() => {
-            showToast("✅ Message saved & queued successfully!");
+            showToast('✅ Message saved & queued successfully!');
             this.reset();
         })
         .finally(() => {
@@ -269,17 +231,51 @@ function showToast(msg) {
 }
 
 // ===== DYNAMIC PORTFOLIO CMS HYDRATION =====
-function hydratePortfolioCMS() {
-    try {
-        let portfolio = null;
-        if (window.CMS_STORE && typeof window.CMS_STORE.getState === 'function') {
-            portfolio = window.CMS_STORE.getState();
-        } else {
-            const rawPortfolio = localStorage.getItem('nivesh_portfolio_file_cms_data_v3') || localStorage.getItem('nivesh_admin_portfolio_data');
-            if (rawPortfolio) portfolio = JSON.parse(rawPortfolio);
-        }
-        if (!portfolio) return;
+// Source of truth: /api/portfolio (GitHub REST API / Local Storage)
+// localStorage is used only as an instant-render cache
+let _portfolioDataCache = null;
 
+async function fetchPortfolioFromAPI() {
+    try {
+        const res = await fetch('/api/portfolio');
+        if (res.ok) {
+            const data = await res.json();
+            if (data && data.about) {
+                _portfolioDataCache = data;
+                try { localStorage.setItem('nivesh_portfolio_cache_v4', JSON.stringify(data)); } catch (e) {}
+                return data;
+            }
+        }
+    } catch (e) {
+        console.warn('[Portfolio] API fetch failed, using cache:', e.message);
+    }
+    return null;
+}
+
+function getPortfolioFromCache() {
+    if (_portfolioDataCache) return _portfolioDataCache;
+    // Try new cache key first, then legacy keys
+    const keys = ['nivesh_portfolio_cache_v4', 'nivesh_portfolio_file_cms_data_v3', 'nivesh_admin_portfolio_data'];
+    for (const key of keys) {
+        try {
+            const raw = localStorage.getItem(key);
+            if (raw) {
+                const parsed = JSON.parse(raw);
+                if (parsed && parsed.about) {
+                    _portfolioDataCache = parsed;
+                    return parsed;
+                }
+            }
+        } catch (e) {}
+    }
+    return window.PORTFOLIO_INITIAL_DATA || null;
+}
+
+function hydratePortfolioCMS(portfolio) {
+    if (!portfolio) portfolio = getPortfolioFromCache();
+    if (!portfolio) return;
+
+    try {
         // 1. ABOUT ME SECTION
         if (portfolio.about) {
             const ab = portfolio.about;
@@ -564,44 +560,60 @@ function bindCertModalEvents() {
 }
 
 // Listen to real-time update events across tabs & windows
-window.addEventListener('cms_data_updated', hydratePortfolioCMS);
-window.addEventListener('storage', (e) => {
-    if (e.key === 'nivesh_admin_portfolio_data') {
-        hydratePortfolioCMS();
-    }
+window.addEventListener('cms_data_updated', () => {
+    fetchPortfolioFromAPI().then(data => {
+        if (data) hydratePortfolioCMS(data);
+    });
 });
 
-// Run initial hydration
-hydratePortfolioCMS();
+// Initial hydration: render cache instantly (no flicker), then fetch fresh from API
+(async function initPortfolioHydration() {
+    const cached = getPortfolioFromCache();
+    if (cached) hydratePortfolioCMS(cached);
+    const fresh = await fetchPortfolioFromAPI();
+    if (fresh) hydratePortfolioCMS(fresh);
+    // Fire cms_data_updated so resume links update
+    window.dispatchEvent(new CustomEvent('cms_data_updated', { detail: fresh || cached }));
+})();
 
 // ===== DYNAMIC ACTIVE RESUME ROUTING & ANALYTICS TRACKING =====
 (function hydrateActiveResume() {
-    try {
-        const rawResume = localStorage.getItem('nivesh_admin_resume');
-        if (rawResume) {
-            const resumeData = JSON.parse(rawResume);
-            if (resumeData && resumeData.dataUrl) {
-                const resumeLinks = document.querySelectorAll('a[href*="RESUME.pdf"], a.btn-footer');
-                resumeLinks.forEach(link => {
-                    if (link.getAttribute('href') && link.getAttribute('href').indexOf('admin.html') === -1) {
-                        link.href = resumeData.dataUrl;
-                        link.setAttribute('download', resumeData.filename || 'NIVESH_R_RESUME.pdf');
-                    }
-                });
-            }
-        }
-    } catch (err) { }
+    // After initial portfolio load, update resume links from API data
+    function applyResumeUrl(data) {
+        if (!data || !data.resume) return;
+        const resume = data.resume;
+        // Prefer Cloudinary URL, fallback to data_url (legacy) or static path
+        const url = resume.url || resume.data_url || '';
+        if (!url || !resume.is_active) return;
 
-    // Track Download clicks
+        const resumeLinks = document.querySelectorAll('a[href*="RESUME"], a[href*="resume"], .resume-btn, #heroResumeBtn, #footerResumeBtn');
+        resumeLinks.forEach(link => {
+            if (link.getAttribute('href') && link.getAttribute('href').indexOf('admin.html') === -1) {
+                link.href = url;
+                link.setAttribute('download', resume.filename || 'NIVESH_R_RESUME.pdf');
+            }
+        });
+    }
+
+    // Apply from cache immediately
+    const cached = getPortfolioFromCache();
+    if (cached) applyResumeUrl(cached);
+
+    // Re-apply after API fetch completes
+    window.addEventListener('cms_data_updated', () => {
+        const fresh = getPortfolioFromCache();
+        if (fresh) applyResumeUrl(fresh);
+    });
+
+    // Track Download clicks → MongoDB analytics
     document.querySelectorAll('a[href*="RESUME"], a[download]').forEach(link => {
         link.addEventListener('click', () => {
             try {
-                const rawAnalytics = localStorage.getItem('nivesh_admin_analytics');
-                if (rawAnalytics) {
-                    const analytics = JSON.parse(rawAnalytics);
-                    analytics.resumeDownloads = (analytics.resumeDownloads || 127) + 1;
-                    localStorage.setItem('nivesh_admin_analytics', JSON.stringify(analytics));
-                }
+                fetch('/api/analytics', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ field: 'resumeDownloads' })
+                }).catch(() => {});
             } catch (e) { }
         });
     });

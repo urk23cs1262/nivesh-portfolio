@@ -63,19 +63,25 @@
 
             <form class="auth-form" id="adminLoginForm" autocomplete="off">
                 <div class="form-group">
-                    <label>Admin Password</label>
+                    <label for="adminPassword">Admin Password</label>
                     <div class="input-with-icon">
-                        <i class="fas fa-lock"></i>
+                        <i class="fas fa-lock input-icon-left"></i>
                         <input type="password" id="adminPassword" class="form-control" placeholder="Enter admin password" autocomplete="new-password" required autofocus>
+                        <button type="button" class="toggle-pwd-btn" id="toggleAdminPasswordBtn" title="Show password" aria-label="Toggle password visibility" tabindex="-1">
+                            <i class="fas fa-eye"></i>
+                        </button>
                     </div>
                     <div class="field-error" id="pwdError" style="display:none;"><i class="fas fa-times-circle"></i> <span id="pwdErrorText"></span></div>
                 </div>
 
                 <div class="form-group">
-                    <label>Security Verification PIN</label>
+                    <label for="adminPin">Security Verification PIN</label>
                     <div class="input-with-icon">
-                        <i class="fas fa-key"></i>
+                        <i class="fas fa-key input-icon-left"></i>
                         <input type="password" id="adminPin" class="form-control" placeholder="Enter admin security pin" autocomplete="new-password" required>
+                        <button type="button" class="toggle-pwd-btn" id="toggleAdminPinBtn" title="Show PIN" aria-label="Toggle PIN visibility" tabindex="-1">
+                            <i class="fas fa-eye"></i>
+                        </button>
                     </div>
                     <div class="field-error" id="pinError" style="display:none;"><i class="fas fa-times-circle"></i> <span id="pinErrorText"></span></div>
                 </div>
@@ -552,25 +558,49 @@
 
                         <div class="resume-preview-container">
                             <div>
-                                <div class="resume-upload-card" id="resumeDropZone">
+                                <label class="resume-upload-card" id="resumeDropZone" for="resumeFileInput" style="display: block; cursor: pointer;">
                                     <div class="upload-icon">
                                         <i class="fas fa-cloud-upload-alt"></i>
                                     </div>
                                     <div class="upload-title">Upload New Resume PDF</div>
                                     <div class="upload-desc">Click to select PDF file (Max 5MB)</div>
-                                    <input type="file" id="resumeFileInput" class="file-input-hidden" accept=".pdf">
-                                    <button type="button" class="btn-header btn-header-primary">Choose PDF File</button>
+                                    <input type="file" id="resumeFileInput" class="file-input-hidden" accept=".pdf,application/pdf">
+                                    <span id="chooseResumePdfBtn" class="btn-header btn-header-primary" style="display: inline-block; cursor: pointer;">Choose PDF File</span>
+                                </label>
+
+                                <div class="active-resume-badge" id="activeResumeBadgeContainer">
+                                    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
+                                        <div>
+                                            <h5 class="active-resume-title" style="display: flex; align-items: center; gap: 6px; color: #10b981;">
+                                                <i class="fas fa-check-circle"></i> ACTIVE PUBLIC RESUME
+                                            </h5>
+                                            <p id="activeResumeName">NIVESH_R_RESUME.pdf</p>
+                                            <small id="activeResumeDate" style="display: block; margin-top: 2px;"></small>
+                                        </div>
+                                        <button type="button" id="btnPreviewActive" class="btn-cms-secondary" style="padding: 4px 10px; font-size: 0.78rem; white-space: nowrap;" title="Preview Active Resume">
+                                            <i class="fas fa-eye"></i> Preview
+                                        </button>
+                                    </div>
                                 </div>
 
-                                <div class="active-resume-badge">
-                                    <h5 class="active-resume-title">ACTIVE PUBLIC RESUME</h5>
-                                    <p id="activeResumeName">NIVESH_R_RESUME.pdf</p>
-                                    <small id="activeResumeDate"></small>
-                                </div>
                             </div>
 
-                            <div class="pdf-viewer-frame">
-                                <iframe id="adminPdfFrame" src="assets/pdf/resume/NIVESH_R_RESUME.pdf"></iframe>
+                            <div style="display: flex; flex-direction: column; height: 100%;">
+                                <div class="pdf-viewer-toolbar" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 16px; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-color); border-bottom: none; border-top-left-radius: var(--radius-lg); border-top-right-radius: var(--radius-lg);">
+                                    <div style="display: flex; align-items: center; gap: 10px; overflow: hidden;">
+                                        <i class="fas fa-file-pdf" style="color: #ef4444; font-size: 1.1rem;"></i>
+                                        <span id="previewPdfTitle" style="font-weight: 700; font-size: 0.9rem; color: var(--text-primary); text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">NIVESH_R_RESUME.pdf</span>
+                                        <span id="previewPdfTag" style="background: rgba(16, 185, 129, 0.15); color: #10b981; font-size: 0.7rem; font-weight: 700; padding: 2px 8px; border-radius: 10px; text-transform: uppercase;">Active</span>
+                                    </div>
+                                    <div style="display: flex; gap: 8px; align-items: center;">
+                                        <a id="downloadPreviewPdfBtn" href="assets/pdf/resume/NIVESH_R_RESUME.pdf" download="NIVESH_R_RESUME.pdf" target="_blank" class="btn-cms-secondary" style="padding: 5px 12px; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 6px; text-decoration: none;">
+                                            <i class="fas fa-download"></i> Download
+                                        </a>
+                                    </div>
+                                </div>
+                                <div class="pdf-viewer-frame" style="border-top-left-radius: 0; border-top-right-radius: 0; flex: 1; min-height: 520px;">
+                                    <iframe id="adminPdfFrame" src="assets/pdf/resume/NIVESH_R_RESUME.pdf"></iframe>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1092,9 +1122,9 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-    <script src="JS/initialData.js"></script>
-    <script src="JS/cmsStore.js"></script>
-    <script src="JS/admin.js"></script>
+    <script src="JS/initialData.js?v=2.0"></script>
+    <script src="JS/cmsStore.js?v=2.0"></script>
+    <script src="JS/admin.js?v=2.0"></script>
 </body>
 
 </html>

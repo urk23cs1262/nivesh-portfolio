@@ -1,7 +1,7 @@
 /* ==========================================================================
-   NIVESH PORTFOLIO — SECURE SERVER-SIDE API  (api/index.js)
-   Runs as a Vercel Serverless Function OR a local Express server.
-   Secrets live in process.env ONLY — never in browser JavaScript.
+   NIVESH PORTFOLIO — GITHUB REST API BACKEND  (api/index.js)
+   Storage Model: GitHub Repository Commits (Production) + Local Filesystem (Dev)
+   Zero external database required! Uses GitHub REST API to persist changes.
    ========================================================================== */
 
 'use strict';
@@ -16,138 +16,235 @@ const path    = require('path');
 
 const app = express();
 
-// ── Environment Variables (never sent to browser) ────────────────────────────
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
-const ADMIN_PIN      = process.env.ADMIN_PIN;
-const JWT_SECRET     = process.env.JWT_SECRET;
-const PORT           = process.env.PORT || 3000;
+// ── Environment Variables ─────────────────────────────────────────────────────
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '';
+const ADMIN_PIN      = process.env.ADMIN_PIN      || '';
+const JWT_SECRET     = process.env.JWT_SECRET     || '';
 
-// Detect Vercel serverless environment — filesystem is read-only at runtime
-const IS_VERCEL = !!(process.env.VERCEL || process.env.VERCEL_ENV);
+const GITHUB_TOKEN  = process.env.GITHUB_TOKEN  || '';
+const GITHUB_OWNER  = process.env.GITHUB_OWNER  || '';
+const GITHUB_REPO   = process.env.GITHUB_REPO   || '';
+const GITHUB_BRANCH = process.env.GITHUB_BRANCH || '';
+const PORT          = process.env.PORT          || 3000;
 
-// Guard: warn loudly on startup if required env vars are missing
-if (!ADMIN_PASSWORD || !ADMIN_PIN || !JWT_SECRET) {
-    console.error(
-        '[ERROR] Required environment variables are missing.\n' +
-        '        Set ADMIN_PASSWORD, ADMIN_PIN and JWT_SECRET in .env (local)\n' +
-        '        or in Vercel Project → Settings → Environment Variables.'
-    );
-}
+const IS_GITHUB_STORAGE = Boolean(GITHUB_TOKEN && GITHUB_TOKEN.trim().length > 0);
 
-// ── Data File Path ────────────────────────────────────────────────────────────
-// Points to public/data/ — static files served by Vercel from outputDirectory
-const DATA_FILE = path.join(__dirname, '..', 'public', 'data', 'niveshr_portfolio.json');
-
-// ── Middleware ────────────────────────────────────────────────────────────────
+// Middleware
 app.use(cors());
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ limit: '50mb', extended: true }));
+app.use(express.json({ limit: '25mb' }));
+app.use(express.urlencoded({ limit: '25mb', extended: true }));
 
-// NOTE: express.static is intentionally omitted here.
-// On Vercel, static files in public/ are served natively by the CDN via
-// outputDirectory in vercel.json — Express static middleware inside a
-// serverless function does not work reliably on Vercel.
-// For local dev, run: node api/index.js  (static files served by server.js separately)
+// ── GitHub REST API Helper Functions ──────────────────────────────────────────
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-function ensureDataFile() {
-    if (IS_VERCEL) return; // Cannot create directories on Vercel runtime
-    const dataDir = path.join(__dirname, '..', 'public', 'data');
-    if (!fs.existsSync(dataDir)) {
-        fs.mkdirSync(dataDir, { recursive: true });
+function getGitHubHeaders() {
+    return {
+        'Authorization': `Bearer ${GITHUB_TOKEN.trim()}`,
+        'Accept': 'application/vnd.github.v3+json',
+        'User-Agent': 'Nivesh-Portfolio-CMS-Vercel',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'If-None-Match': ''
+    };
+}
+
+/**
+ * Fetch a file from GitHub repository via REST API.
+ * Returns { contentString, sha } or null if not found.
+ */
+async function getFileFromGitHub(repoPath) {
+    const cleanPath = repoPath.replace(/^\//, '');
+    const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${cleanPath}?ref=${GITHUB_BRANCH}&_t=${Date.now()}_${Math.random()}`;
+
+    try {
+        const res = await fetch(url, { headers: getGitHubHeaders() });
+        if (res.status === 404) return null;
+        if (!res.ok) {
+            const errText = await res.text();
+            console.error(`[GitHub API GET Error ${res.status}]`, errText);
+            return null;
+        }
+        const json = await res.json();
+        const contentString = Buffer.from(json.content, 'base64').toString('utf8');
+        return { contentString, sha: json.sha };
+    } catch (err) {
+        console.error('[GitHub API GET Exception]', err.message);
+        return null;
     }
-    if (!fs.existsSync(DATA_FILE)) {
-        const initialData = {
-            about: {
-                name: 'Nivesh R',
-                role: 'CSE Student · Full Stack Developer · AI Enthusiast',
-                short_description: 'B.Tech CSE student at Karunya Institute of Technology and Science.',
-                about_paragraph_1: '',
-                about_paragraph_2: '',
-                hobbies: 'listening to music, reading, and playing the drums.',
-                projects_count: '5+',
-                cgpa: '7.8',
-                graduation_year: '2027',
-                profile_image_url: './assets/img/NIVESH R.jpg',
-                github_url: 'https://github.com/theniveshr',
-                linkedin_url: 'https://www.linkedin.com/in/nivesh-r-4646972b3',
-                instagram_url: 'https://www.instagram.com/______.nivesh_arn.______/?hl=en',
-                email: 'niveshr@karunya.edu.in'
-            },
-            education:      [],
-            experiences:    [],
-            skillCategories:[],
-            projects:       [],
-            certificates:   [],
-            activities:     [],
-            contact:        {},
-            socialLinks:    [],
-            quickLinks:     [],
-            lastUpdated: new Date().toISOString()
+}
+
+/**
+ * Commit/update a file on GitHub repository via REST API with automatic 409 SHA conflict retries.
+ */
+async function commitFileToGitHub(repoPath, content, commitMessage, maxRetries = 3) {
+    const cleanPath = repoPath.replace(/^\//, '');
+    const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${cleanPath}`;
+
+    let base64Content = '';
+    if (Buffer.isBuffer(content)) {
+        base64Content = content.toString('base64');
+    } else if (typeof content === 'string') {
+        if (content.startsWith('data:') || (/^[A-Za-z0-9+/=]+$/.test(content.slice(0, 100)) && content.length % 4 === 0 && !content.includes('{'))) {
+            base64Content = content.replace(/^data:[^;]+;base64,/, '');
+        } else {
+            base64Content = Buffer.from(content, 'utf8').toString('base64');
+        }
+    } else {
+        base64Content = Buffer.from(JSON.stringify(content, null, 2), 'utf8').toString('base64');
+    }
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        const existing = await getFileFromGitHub(cleanPath);
+        const sha = existing ? existing.sha : undefined;
+
+        const payload = {
+            message: commitMessage || `CMS update: ${cleanPath}`,
+            content: base64Content,
+            branch: GITHUB_BRANCH
         };
-        fs.writeFileSync(DATA_FILE, JSON.stringify(initialData, null, 2), 'utf8');
+        if (sha) payload.sha = sha;
+
+        const res = await fetch(url, {
+            method: 'PUT',
+            headers: getGitHubHeaders(),
+            body: JSON.stringify(payload)
+        });
+
+        if (res.ok) {
+            const resData = await res.json();
+            return { success: true, commit: resData.commit };
+        }
+
+        const errJson = await res.json().catch(() => ({ message: res.statusText }));
+        if (res.status === 409 && attempt < maxRetries) {
+            console.warn(`[GitHub SHA Conflict 409] Retrying commit for ${cleanPath} (attempt ${attempt}/${maxRetries})...`);
+            await new Promise(r => setTimeout(r, 500 * attempt));
+            continue;
+        }
+
+        console.error(`[GitHub API Commit Error ${res.status}]`, errJson);
+        throw new Error(errJson.message || `GitHub API error ${res.status}`);
     }
 }
 
-// Only run ensureDataFile in local dev (not on Vercel)
-if (!IS_VERCEL) {
-    ensureDataFile();
+// ── Sequential GitHub Commit Queue ────────────────────────────────────────────
+let githubQueue = Promise.resolve();
+
+function enqueueGitHubCommit(relativePath, content, commitMessage) {
+    githubQueue = githubQueue.then(async () => {
+        try {
+            return await commitFileToGitHub(relativePath, content, commitMessage);
+        } catch (err) {
+            console.warn(`[GitHub Queue Warning for ${relativePath}]:`, err.message);
+            return { success: false, error: err.message };
+        }
+    });
+    return githubQueue;
 }
 
-function validateSchema(data) {
-    if (!data || typeof data !== 'object') {
-        return { valid: false, message: 'Root JSON must be an object.' };
+// ── Local Filesystem Storage Helper Functions ───────────────────────────────
+
+function getLocalFilePath(relativePath) {
+    const clean = relativePath.replace(/^\//, '');
+    return path.join(__dirname, '..', clean);
+}
+
+function readLocalFile(relativePath) {
+    try {
+        const fullPath = getLocalFilePath(relativePath);
+        if (!fs.existsSync(fullPath)) return null;
+        return fs.readFileSync(fullPath, 'utf8');
+    } catch (err) {
+        return null;
     }
-    if (!data.about || typeof data.about !== 'object') {
-        return { valid: false, message: 'Missing or invalid "about" section.' };
+}
+
+function writeLocalFile(relativePath, content) {
+    const fullPath = getLocalFilePath(relativePath);
+    const dir = path.dirname(fullPath);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+
+    if (Buffer.isBuffer(content)) {
+        fs.writeFileSync(fullPath, content);
+    } else if (typeof content === 'string') {
+        if (content.startsWith('data:')) {
+            const base64Data = content.replace(/^data:[^;]+;base64,/, '');
+            fs.writeFileSync(fullPath, Buffer.from(base64Data, 'base64'));
+        } else {
+            fs.writeFileSync(fullPath, content, 'utf8');
+        }
+    } else {
+        fs.writeFileSync(fullPath, JSON.stringify(content, null, 2), 'utf8');
     }
-    return { valid: true };
+}
+
+// ── Unified Storage Read/Write Wrappers ───────────────────────────────────────
+
+async function storageReadText(relativePath) {
+    if (IS_GITHUB_STORAGE) {
+        const gh = await getFileFromGitHub(relativePath);
+        if (gh) return gh.contentString;
+    }
+    return readLocalFile(relativePath);
+}
+
+async function storageReadJSON(relativePath, defaultData = null) {
+    const raw = await storageReadText(relativePath);
+    if (raw) {
+        try { return JSON.parse(raw); } catch (e) { }
+    }
+    return defaultData;
+}
+
+async function storageWrite(relativePath, content, commitMessage) {
+    // 1. Always write locally first for instant local server response
+    try {
+        writeLocalFile(relativePath, content);
+    } catch (e) { }
+
+    // 2. If GitHub storage is enabled, queue commit to GitHub
+    if (IS_GITHUB_STORAGE) {
+        return await enqueueGitHubCommit(relativePath, content, commitMessage);
+    }
+    return { success: true, mode: 'local' };
 }
 
 // ── Auth Middleware ───────────────────────────────────────────────────────────
-/**
- * Verifies the Bearer JWT from the Authorization header.
- * Attach this to any route that requires admin access.
- */
 function authenticateAdmin(req, res, next) {
     const authHeader = req.headers['authorization'];
-
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
         return res.status(401).json({ success: false, message: 'Unauthorized — no token provided.' });
     }
-
     const token = authHeader.split(' ')[1];
-
     try {
         const decoded = jwt.verify(token, JWT_SECRET);
-
         if (decoded.role !== 'admin') {
             return res.status(403).json({ success: false, message: 'Forbidden — insufficient role.' });
         }
-
         req.admin = decoded;
         next();
-
     } catch (err) {
         return res.status(401).json({ success: false, message: 'Invalid or expired session. Please log in again.' });
     }
 }
 
-// ── PUBLIC ROUTES ─────────────────────────────────────────────────────────────
+// ── Schema Validation ─────────────────────────────────────────────────────────
+function validateSchema(data) {
+    if (!data || typeof data !== 'object') return { valid: false, message: 'Root JSON must be an object.' };
+    if (!data.about || typeof data.about !== 'object') return { valid: false, message: 'Missing or invalid "about" section.' };
+    return { valid: true };
+}
+
+// =============================================================================
+// PUBLIC ROUTES
+// =============================================================================
 
 /**
  * POST /api/login
- * Body: { password: string, pin: string }
- * Validates credentials server-side — the actual values are NEVER sent to the browser.
- * Returns a signed JWT on success.
  */
 app.post('/api/login', (req, res) => {
     const { password, pin } = req.body || {};
-
     if (!password || !pin) {
         return res.status(400).json({ success: false, message: 'Password and PIN are required.' });
     }
-
     const passwordValid = password === ADMIN_PASSWORD;
     const pinValid      = pin      === ADMIN_PIN;
 
@@ -160,53 +257,95 @@ app.post('/api/login', (req, res) => {
     if (!pinValid) {
         return res.status(401).json({ success: false, message: 'Security PIN is incorrect.' });
     }
-
     const token = jwt.sign(
         { role: 'admin', iat: Math.floor(Date.now() / 1000) },
         JWT_SECRET,
-        { expiresIn: '2h' }
+        { expiresIn: '8h' }
     );
-
     return res.json({ success: true, token });
 });
 
 /**
  * GET /api/portfolio
- * Public — returns the current portfolio data from the bundled JSON file.
+ * Public — returns current portfolio data from GitHub / local file.
  */
-app.get('/api/portfolio', (req, res) => {
+app.get('/api/portfolio', async (req, res) => {
     try {
-        if (!IS_VERCEL) ensureDataFile();
-        const content = fs.readFileSync(DATA_FILE, 'utf8');
-        res.json(JSON.parse(content));
+        const data = await storageReadJSON('public/data/niveshr_portfolio.json');
+        if (data) return res.json(data);
+
+        // Ultimate fallback: static read from disk
+        const raw = readLocalFile('public/data/niveshr_portfolio.json');
+        if (raw) return res.json(JSON.parse(raw));
+
+        return res.status(404).json({ error: 'Portfolio data file not found.' });
     } catch (err) {
-        res.status(500).json({ error: 'Failed to read portfolio data.', details: err.message });
+        return res.status(500).json({ error: 'Failed to read portfolio data.', details: err.message });
     }
 });
 
-// ── PROTECTED ROUTES (require valid JWT) ──────────────────────────────────────
+/**
+ * POST /api/messages
+ * Public — save contact message.
+ */
+app.post('/api/messages', async (req, res) => {
+    try {
+        const { name, email, message } = req.body || {};
+        if (!name || !email || !message) {
+            return res.status(400).json({ success: false, message: 'Name, email, and message are required.' });
+        }
+        const messages = await storageReadJSON('public/data/messages.json', []);
+        const newMsg = {
+            id: 'msg_' + Date.now(),
+            name,
+            email,
+            message,
+            status: 'unread',
+            createdAt: new Date().toISOString()
+        };
+        messages.unshift(newMsg);
+        await storageWrite('public/data/messages.json', messages, `New contact message from ${name}`);
+        return res.json({ success: true, message: 'Message sent successfully!', id: newMsg.id });
+    } catch (err) {
+        return res.status(500).json({ success: false, message: 'Failed to save message.', details: err.message });
+    }
+});
+
+/**
+ * PATCH /api/analytics
+ * Public — increment analytics counter.
+ */
+app.patch('/api/analytics', async (req, res) => {
+    try {
+        const { field } = req.body || {};
+        const allowed = ['pageViews', 'uniqueVisitors', 'resumeDownloads', 'resumeViews'];
+        if (!field || !allowed.includes(field)) {
+            return res.status(400).json({ success: false, message: 'Invalid analytics field.' });
+        }
+        const analytics = await storageReadJSON('public/data/analytics.json', {
+            pageViews: 1247,
+            uniqueVisitors: 893,
+            resumeDownloads: 127,
+            resumeViews: 312
+        });
+        analytics[field] = (analytics[field] || 0) + 1;
+        analytics.lastUpdated = new Date().toISOString();
+        await storageWrite('public/data/analytics.json', analytics, `Increment analytics: ${field}`);
+        return res.json({ success: true, [field]: analytics[field] });
+    } catch (err) {
+        return res.status(500).json({ success: false, details: err.message });
+    }
+});
+
+// =============================================================================
+// PROTECTED ADMIN ROUTES
+// =============================================================================
 
 /**
  * PUT /api/portfolio
- * Protected — saves updated portfolio data.
- * On Vercel: returns 503 (filesystem is read-only). cmsStore.js handles this
- *            gracefully — data is already saved to localStorage.
- * Local dev: writes to public/data/niveshr_portfolio.json on disk.
+ * Admin — update full portfolio data.
  */
-app.put('/api/portfolio', authenticateAdmin, (req, res) => {
-    if (IS_VERCEL) {
-        // Vercel serverless filesystem is read-only at runtime.
-        // Changes are persisted in the admin's browser localStorage by cmsStore.js.
-        // To publish globally: export JSON → replace public/data/niveshr_portfolio.json → push to GitHub.
-        return res.status(503).json({
-            success: false,
-            vercel: true,
-            message: 'Server-side file writes are not supported on Vercel serverless. ' +
-                     'Your changes are saved in your browser. ' +
-                     'Use Export JSON → commit → push to GitHub to publish globally.'
-        });
-    }
-
+app.put('/api/portfolio', authenticateAdmin, async (req, res) => {
     try {
         const newData = req.body;
         const validation = validateSchema(newData);
@@ -214,68 +353,353 @@ app.put('/api/portfolio', authenticateAdmin, (req, res) => {
             return res.status(400).json({ error: validation.message });
         }
         newData.lastUpdated = new Date().toISOString();
-        fs.writeFileSync(DATA_FILE, JSON.stringify(newData, null, 2), 'utf8');
-        res.json({ success: true, message: 'Portfolio data saved.', data: newData });
+
+        await storageWrite(
+            'public/data/niveshr_portfolio.json',
+            newData,
+            'Update portfolio CMS data'
+        );
+
+        return res.json({ success: true, message: 'Portfolio data updated successfully.', data: newData });
     } catch (err) {
-        res.status(500).json({ error: 'Failed to save portfolio data.', details: err.message });
+        return res.status(500).json({ error: 'Failed to save portfolio data.', details: err.message });
     }
 });
 
 /**
  * POST /api/portfolio/import
- * Protected — imports and validates a portfolio JSON upload.
- * On Vercel: returns 503 for same reason as PUT.
+ * Admin — import JSON file.
  */
-app.post('/api/portfolio/import', authenticateAdmin, (req, res) => {
-    if (IS_VERCEL) {
-        return res.status(503).json({
-            success: false,
-            vercel: true,
-            message: 'Server-side file writes are not supported on Vercel serverless. ' +
-                     'Use the Export/Import JSON workflow to manage portfolio data.'
-        });
-    }
-
+app.post('/api/portfolio/import', authenticateAdmin, async (req, res) => {
     try {
         const importedData = req.body;
         const validation = validateSchema(importedData);
         if (!validation.valid) {
-            return res.status(400).json({ error: 'JSON Validation Failed: ' + validation.message });
+            return res.status(400).json({ error: 'Validation Error: ' + validation.message });
         }
         importedData.lastUpdated = new Date().toISOString();
-        fs.writeFileSync(DATA_FILE, JSON.stringify(importedData, null, 2), 'utf8');
-        res.json({ success: true, message: 'Import successful — portfolio data saved.', data: importedData });
+
+        await storageWrite(
+            'public/data/niveshr_portfolio.json',
+            importedData,
+            'Import portfolio JSON data'
+        );
+
+        return res.json({ success: true, message: 'Import successful!', data: importedData });
     } catch (err) {
-        res.status(500).json({ error: 'Failed to import JSON.', details: err.message });
+        return res.status(500).json({ error: 'Failed to import JSON.', details: err.message });
     }
 });
 
 /**
  * GET /api/portfolio/export
- * Protected — download the current portfolio JSON file.
+ * Admin — export portfolio JSON.
  */
-app.get('/api/portfolio/export', authenticateAdmin, (req, res) => {
+app.get('/api/portfolio/export', authenticateAdmin, async (req, res) => {
     try {
-        if (!IS_VERCEL) ensureDataFile();
-        res.download(DATA_FILE, 'niveshr_portfolio.json');
+        const data = await storageReadJSON('public/data/niveshr_portfolio.json', {});
+        res.setHeader('Content-Disposition', 'attachment; filename="niveshr_portfolio.json"');
+        res.setHeader('Content-Type', 'application/json');
+        return res.json(data);
     } catch (err) {
-        res.status(500).json({ error: 'Failed to export portfolio data.', details: err.message });
+        return res.status(500).json({ error: 'Failed to export portfolio data.', details: err.message });
     }
 });
 
-// ── Local Development Server ──────────────────────────────────────────────────
-// module.exports = app MUST come before any app.listen so Vercel can import it.
-// app.listen is only called when this file is run directly (local dev).
+// =============================================================================
+// FILE UPLOADS (Resume & Images via Base64 JSON payload)
+// =============================================================================
+
+/**
+ * POST /api/upload/resume
+ * Admin — upload resume PDF file.
+ * Accepts: { filename, fileBase64 }
+ */
+app.post('/api/upload/resume', authenticateAdmin, async (req, res) => {
+    try {
+        const { filename, fileBase64 } = req.body || {};
+        if (!fileBase64) {
+            return res.status(400).json({ success: false, message: 'Missing fileBase64 data.' });
+        }
+
+        const safeFilename = (filename || 'NIVESH_R_RESUME.pdf').replace(/[^a-zA-Z0-9._-]/g, '_');
+        if (filename && !filename.toLowerCase().endsWith('.pdf')) {
+            return res.status(400).json({ success: false, message: 'Invalid format! Only PDF files (.pdf) are allowed.' });
+        }
+
+        const repoPath = 'public/assets/pdf/resume/NIVESH_R_RESUME.pdf';
+
+        // Clean base64 string
+        const base64Data = fileBase64.replace(/^data:[^;]+;base64,/, '');
+        const buffer = Buffer.from(base64Data, 'base64');
+
+        // Write/Commit to single target resume PDF file
+        await storageWrite(repoPath, buffer, `Update resume PDF: NIVESH_R_RESUME.pdf`);
+
+        const originalName = (filename || 'NIVESH_R_RESUME.pdf').replace(/[^a-zA-Z0-9._-]/g, '_');
+        const displayFilename = originalName.toLowerCase().endsWith('.pdf') ? originalName : originalName + '.pdf';
+
+        const timestamp = Date.now();
+        const resumeData = {
+            id: 'res-' + timestamp,
+            filename: displayFilename,
+            original_name: filename || displayFilename,
+            file_size: (buffer.length / 1024).toFixed(0) + ' KB',
+            upload_date: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
+            url: `assets/pdf/resume/NIVESH_R_RESUME.pdf?v=${timestamp}`,
+            is_active: true
+        };
+
+        // Update portfolio.json
+        const portfolio = await storageReadJSON('public/data/niveshr_portfolio.json', {});
+        portfolio.resume = resumeData;
+        portfolio.lastUpdated = new Date().toISOString();
+
+        await storageWrite('public/data/niveshr_portfolio.json', portfolio, `Link resume PDF in portfolio.json`);
+
+        return res.json({
+            success: true,
+            message: 'Resume PDF uploaded & updated successfully!',
+            resume: resumeData
+        });
+    } catch (err) {
+        console.error('[Upload Resume Error]', err);
+        return res.status(500).json({ success: false, message: 'Resume upload failed.', details: err.message });
+    }
+});
+
+/**
+ * DELETE /api/upload/resume
+ * Admin — delete/deactivate active resume.
+ */
+app.delete('/api/upload/resume', authenticateAdmin, async (req, res) => {
+    try {
+        const portfolio = await storageReadJSON('public/data/niveshr_portfolio.json', {});
+        portfolio.resume = { is_active: false };
+        portfolio.lastUpdated = new Date().toISOString();
+        await storageWrite('public/data/niveshr_portfolio.json', portfolio, 'Deactivate resume');
+        return res.json({ success: true, message: 'Resume deactivated.' });
+    } catch (err) {
+        return res.status(500).json({ success: false, details: err.message });
+    }
+});
+
+/**
+ * POST /api/upload/image
+ * Admin — upload project or certificate image.
+ * Accepts: { filename, fileBase64, folder }
+ */
+app.post('/api/upload/image', authenticateAdmin, async (req, res) => {
+    try {
+        const { filename, fileBase64, folder } = req.body || {};
+        if (!fileBase64) {
+            return res.status(400).json({ success: false, message: 'Missing fileBase64 image data.' });
+        }
+
+        const ext = (filename || 'image.png').split('.').pop() || 'png';
+        const timestamp = Date.now();
+        const cleanName = (filename || 'img')
+            .replace(/\.[^/.]+$/, '')
+            .replace(/[^a-zA-Z0-9_-]/g, '_');
+        const finalFilename = `${cleanName}_${timestamp}.${ext}`;
+        const targetFolder = (folder || 'projects').replace(/[^a-zA-Z0-9_-]/g, '');
+        const repoPath = `public/assets/${targetFolder}/${finalFilename}`;
+
+        const base64Data = fileBase64.replace(/^data:[^;]+;base64,/, '');
+        const buffer = Buffer.from(base64Data, 'base64');
+
+        await storageWrite(repoPath, buffer, `Upload project image: ${finalFilename}`);
+
+        const publicUrl = `/assets/${targetFolder}/${finalFilename}`;
+        return res.json({
+            success: true,
+            url: publicUrl,
+            filename: finalFilename
+        });
+    } catch (err) {
+        console.error('[Upload Image Error]', err);
+        return res.status(500).json({ success: false, message: 'Image upload failed.', details: err.message });
+    }
+});
+
+// =============================================================================
+// MESSAGES ROUTES
+// =============================================================================
+
+/**
+ * GET /api/messages
+ */
+app.get('/api/messages', authenticateAdmin, async (req, res) => {
+    try {
+        const messages = await storageReadJSON('public/data/messages.json', []);
+        return res.json({ success: true, messages });
+    } catch (err) {
+        return res.status(500).json({ success: false, details: err.message });
+    }
+});
+
+/**
+ * PATCH /api/messages/:id
+ */
+app.patch('/api/messages/:id', authenticateAdmin, async (req, res) => {
+    try {
+        const { status } = req.body || {};
+        const messages = await storageReadJSON('public/data/messages.json', []);
+        const msg = messages.find(m => m.id === req.params.id);
+        if (!msg) return res.status(404).json({ success: false, message: 'Message not found.' });
+
+        msg.status = status || (msg.status === 'unread' ? 'read' : 'unread');
+        await storageWrite('public/data/messages.json', messages, `Update message status: ${req.params.id}`);
+        return res.json({ success: true, message: msg });
+    } catch (err) {
+        return res.status(500).json({ success: false, details: err.message });
+    }
+});
+
+/**
+ * DELETE /api/messages/:id
+ */
+app.delete('/api/messages/:id', authenticateAdmin, async (req, res) => {
+    try {
+        let messages = await storageReadJSON('public/data/messages.json', []);
+        messages = messages.filter(m => m.id !== req.params.id);
+        await storageWrite('public/data/messages.json', messages, `Delete message: ${req.params.id}`);
+        return res.json({ success: true, message: 'Message deleted.' });
+    } catch (err) {
+        return res.status(500).json({ success: false, details: err.message });
+    }
+});
+
+// =============================================================================
+// LOGS ROUTES
+// =============================================================================
+
+/**
+ * GET /api/logs
+ */
+app.get('/api/logs', authenticateAdmin, async (req, res) => {
+    try {
+        const logs = await storageReadJSON('public/data/logs.json', []);
+        return res.json({ success: true, logs });
+    } catch (err) {
+        return res.status(500).json({ success: false, details: err.message });
+    }
+});
+
+/**
+ * POST /api/logs
+ */
+app.post('/api/logs', authenticateAdmin, async (req, res) => {
+    try {
+        const logEntry = req.body || {};
+        const logs = await storageReadJSON('public/data/logs.json', []);
+        logs.unshift({ ...logEntry, id: 'log_' + Date.now() });
+        if (logs.length > 100) logs.pop();
+        await storageWrite('public/data/logs.json', logs, `Add audit log entry`);
+        return res.json({ success: true });
+    } catch (err) {
+        return res.status(500).json({ success: false, details: err.message });
+    }
+});
+
+/**
+ * DELETE /api/logs
+ */
+app.delete('/api/logs', authenticateAdmin, async (req, res) => {
+    try {
+        await storageWrite('public/data/logs.json', [], `Clear audit logs`);
+        return res.json({ success: true, message: 'Logs cleared.' });
+    } catch (err) {
+        return res.status(500).json({ success: false, details: err.message });
+    }
+});
+
+// =============================================================================
+// ANALYTICS ROUTES
+// =============================================================================
+
+/**
+ * GET /api/analytics
+ */
+app.get('/api/analytics', authenticateAdmin, async (req, res) => {
+    try {
+        const analytics = await storageReadJSON('public/data/analytics.json', {
+            pageViews: 1247,
+            uniqueVisitors: 893,
+            resumeDownloads: 127,
+            resumeViews: 312
+        });
+        return res.json({ success: true, analytics });
+    } catch (err) {
+        return res.status(500).json({ success: false, details: err.message });
+    }
+});
+
+// =============================================================================
+// MIGRATION ROUTE
+// =============================================================================
+
+/**
+ * POST /api/migrate
+ * Admin — Migrate localStorage data payload to GitHub/local storage.
+ */
+app.post('/api/migrate', authenticateAdmin, async (req, res) => {
+    try {
+        const { portfolioData, messages, logs, analytics } = req.body || {};
+        const results = {};
+
+        if (portfolioData && portfolioData.about) {
+            await storageWrite('public/data/niveshr_portfolio.json', portfolioData, 'Migrate portfolio data');
+            results.portfolio = 'migrated';
+        }
+        if (Array.isArray(messages) && messages.length > 0) {
+            await storageWrite('public/data/messages.json', messages, 'Migrate messages');
+            results.messages = `${messages.length} messages migrated`;
+        }
+        if (Array.isArray(logs) && logs.length > 0) {
+            await storageWrite('public/data/logs.json', logs, 'Migrate logs');
+            results.logs = `${logs.length} logs migrated`;
+        }
+        if (analytics && typeof analytics === 'object') {
+            await storageWrite('public/data/analytics.json', analytics, 'Migrate analytics');
+            results.analytics = 'migrated';
+        }
+
+        return res.json({ success: true, message: 'Migration completed successfully!', results });
+    } catch (err) {
+        return res.status(500).json({ success: false, message: 'Migration failed.', details: err.message });
+    }
+});
+
+// =============================================================================
+// STATUS / HEALTH ROUTE
+// =============================================================================
+
+app.get('/api/status', (req, res) => {
+    res.json({
+        api: 'ok',
+        timestamp: new Date().toISOString(),
+        storageMode: IS_GITHUB_STORAGE ? 'github_api' : 'local_filesystem',
+        githubRepo: `${GITHUB_OWNER}/${GITHUB_REPO}`,
+        githubBranch: GITHUB_BRANCH,
+        configured: {
+            githubToken: IS_GITHUB_STORAGE
+        }
+    });
+});
+
+// Serve static public files in local dev mode
+const staticPath = path.join(__dirname, '..', 'public');
+app.use(express.static(staticPath));
+
 module.exports = app;
 
 if (require.main === module) {
-    // For local dev, also serve static files from public/
-    const staticPath = path.join(__dirname, '..', 'public');
-    app.use(express.static(staticPath));
-
     app.listen(PORT, () => {
         console.log(`\u001b[32m🚀 Nivesh Portfolio API running at http://localhost:${PORT}\u001b[0m`);
+        console.log(`   Storage mode: \u001b[36m${IS_GITHUB_STORAGE ? 'GitHub REST API (' + GITHUB_OWNER + '/' + GITHUB_REPO + ')' : 'Local Filesystem'}\u001b[0m`);
         console.log(`   Admin CMS  → http://localhost:${PORT}/admin.html`);
         console.log(`   Public     → http://localhost:${PORT}/`);
+        console.log(`   Status     → http://localhost:${PORT}/api/status`);
     });
 }

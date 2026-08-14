@@ -631,8 +631,9 @@
       "resume": {
         "id": "res-1",
         "filename": "NIVESH_R_RESUME.pdf",
-        "file_size": "1.8 MB",
-        "upload_date": "10 Aug 2026",
+        "file_size": "172 KB",
+        "upload_date": "14 Aug 2026",
+        "url": "assets/pdf/resume/NIVESH_R_RESUME.pdf",
         "data_url": "assets/pdf/resume/NIVESH_R_RESUME.pdf",
         "is_active": true
       },

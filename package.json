@@ -1,7 +1,7 @@
 {
   "name": "nivesh-portfolio",
-  "version": "1.0.0",
-  "description": "Nivesh R Portfolio & Secure CMS",
+  "version": "2.0.0",
+  "description": "Nivesh R Portfolio & Production GitHub-backed CMS",
   "main": "api/index.js",
   "scripts": {
     "start": "node api/index.js",

@@ -200,7 +200,8 @@ body {
     align-items: center;
 }
 
-.input-with-icon i {
+.input-with-icon .input-icon-left,
+.input-with-icon > i:first-child {
     position: absolute;
     left: 14px;
     top: 50%;
@@ -212,9 +213,49 @@ body {
     z-index: 2;
 }
 
-[data-theme="light"] .input-with-icon i { color: #64748b; }
+[data-theme="light"] .input-with-icon .input-icon-left,
+[data-theme="light"] .input-with-icon > i:first-child { color: #64748b; }
 
-.input-with-icon:focus-within i { color: var(--primary); }
+.input-with-icon:focus-within > i:first-child,
+.input-with-icon:focus-within .input-icon-left { color: var(--primary); }
+
+.toggle-pwd-btn {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text-muted, #64748b);
+    font-size: 0.95rem;
+    cursor: pointer;
+    padding: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    z-index: 5;
+    transition: color 0.2s ease, background-color 0.2s ease;
+}
+
+.toggle-pwd-btn:hover {
+    color: var(--primary, #3b82f6);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="light"] .toggle-pwd-btn {
+    color: #64748b;
+}
+
+[data-theme="light"] .toggle-pwd-btn:hover {
+    color: #2563eb;
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.input-with-icon input.form-control {
+    padding-right: 40px !important;
+}
 
 /* Form Controls */
 .form-control {
@@ -1100,6 +1141,10 @@ canvas {
 
 [data-theme="light"] .active-resume-badge { background: #eff6ff !important; border-color: #bfdbfe !important; }
 [data-theme="light"] #activeResumeName    { color: #0f172a !important; }
+[data-theme="light"] .resume-history-card { background: #ffffff !important; border-color: #e2e8f0 !important; }
+[data-theme="light"] .resume-history-item { background: #f8fafc !important; border-color: #cbd5e1 !important; }
+[data-theme="light"] .resume-history-item.active { background: #ecfdf5 !important; border-color: #a7f3d0 !important; }
+[data-theme="light"] .pdf-viewer-toolbar  { background: #f8fafc !important; border-color: #e2e8f0 !important; }
 
 .active-resume-badge h5 {
     font-size: 0.82rem;
@@ -1123,6 +1168,8 @@ canvas {
     overflow: hidden;
     position: relative;
 }
+
+[data-theme="light"] .pdf-viewer-frame { background: #f1f5f9 !important; border-color: #e2e8f0 !important; }
 
 .pdf-viewer-frame iframe,
 .pdf-viewer-frame object {
