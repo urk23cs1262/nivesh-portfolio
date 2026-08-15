@@ -67,7 +67,7 @@ emailjs.init("Tw3LSYbX8-nZodC-t");
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ field: 'pageViews' })
-            }).catch(() => {});
+            }).catch(() => { });
         } catch (e) { }
 
         if (typeof emailjs !== 'undefined') {
@@ -164,7 +164,7 @@ type();
 function initScrollObserver() {
     const revealEls = document.querySelectorAll('.reveal, .project-card, .edu-entry, .activity-card, .cer-card, .skill-group');
     if (window.portfolioObserver) window.portfolioObserver.disconnect();
-    
+
     window.portfolioObserver = new IntersectionObserver((entries) => {
         entries.forEach((e, i) => {
             if (e.isIntersecting) {
@@ -202,7 +202,7 @@ document.getElementById('contactForm').addEventListener('submit', function (e) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: nameVal, email: emailVal, message: msgVal })
-    }).catch(() => {}); // fire-and-forget; EmailJS is the user-facing confirmation
+    }).catch(() => { }); // fire-and-forget; EmailJS is the user-facing confirmation
 
     emailjs.send('service_ay6dt22', 'template_r48p4bg', {
         user_name: nameVal,
@@ -244,7 +244,7 @@ async function fetchPortfolioFromAPI() {
                 _portfolioDataCache = data;
                 // Kept in sync with cmsStore.js's STORAGE_KEY so the public page
                 // and the admin CMS never read stale/mismatched cached data.
-                try { localStorage.setItem('nivesh_portfolio_cache_v7', JSON.stringify(data)); } catch (e) {}
+                try { localStorage.setItem('nivesh_portfolio_cache_v7', JSON.stringify(data)); } catch (e) { }
                 return data;
             }
         }
@@ -268,7 +268,7 @@ function getPortfolioFromCache() {
                     return parsed;
                 }
             }
-        } catch (e) {}
+        } catch (e) { }
     }
     return window.PORTFOLIO_INITIAL_DATA || null;
 }
@@ -442,7 +442,7 @@ function hydratePortfolioCMS(portfolio) {
                         ` : ''}
                         ${hasScreenshots ? `
                             <button type="button" class="btn-project-images" onclick="openProjectGallery('${p.id || idx}')">
-                                <i class="fas fa-images"></i> ${imgLabel} (${screenshots.length})
+                                <i class="fas fa-eye"></i> View Images (${screenshots.length})
                             </button>
                         ` : ''}
                     </div>
@@ -614,7 +614,7 @@ window.addEventListener('cms_data_updated', () => {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ field: 'resumeDownloads' })
-                }).catch(() => {});
+                }).catch(() => { });
             } catch (e) { }
         });
     });
@@ -837,7 +837,7 @@ function getProjectScreenshots(projId) {
                 const parsed = JSON.parse(raw);
                 if (parsed && Array.isArray(parsed.projects)) allProjs = parsed.projects;
             }
-        } catch (e) {}
+        } catch (e) { }
     }
     // Fallback to window PORTFOLIO_INITIAL_DATA
     if (allProjs.length === 0 && window.PORTFOLIO_INITIAL_DATA && Array.isArray(window.PORTFOLIO_INITIAL_DATA.projects)) {
@@ -926,8 +926,8 @@ function updateGalleryView() {
 
     if (thumbsStrip) {
         thumbsStrip.innerHTML = currentGalleryImages.map((img, i) => `
-            <button type="button" class="gallery-thumb-item ${i === activeGalleryIdx ? 'active' : ''}" onclick="window.setGalleryActiveImage(${i})" aria-label="View image ${i+1}">
-                <img src="${img}" alt="Screenshot ${i+1}" loading="lazy">
+            <button type="button" class="gallery-thumb-item ${i === activeGalleryIdx ? 'active' : ''}" onclick="window.setGalleryActiveImage(${i})" aria-label="View image ${i + 1}">
+                <img src="${img}" alt="Screenshot ${i + 1}" loading="lazy">
             </button>
         `).join('');
         // Scroll active thumb into view

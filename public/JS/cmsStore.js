@@ -10,7 +10,7 @@
     // NOTE: this key must stay in sync with the cache key used in script.js
     // (the public site's read-only fallback cache) — otherwise the public
     // page and the admin CMS can drift out of sync when the API is unreachable.
-    const STORAGE_KEY    = 'nivesh_portfolio_cache_v7';
+    const STORAGE_KEY = 'nivesh_portfolio_cache_v7';
     const AUTH_TOKEN_KEY = 'nivesh_admin_auth_token';
 
     function safeGetSessionStorage(key) {
@@ -336,7 +336,7 @@
     // ── One-Time Migration from localStorage ──────────────────────────────────
     async function migrateFromLocalStorage() {
         const portfolioRaw = localStorage.getItem('nivesh_portfolio_file_cms_data_v3') ||
-                             localStorage.getItem('nivesh_admin_portfolio_data');
+            localStorage.getItem('nivesh_admin_portfolio_data');
         const portfolioData = portfolioRaw ? JSON.parse(portfolioRaw) : null;
 
         const messagesRaw = localStorage.getItem('nivesh_admin_messages');
@@ -367,22 +367,22 @@
 
     // ── Expose Global API ─────────────────────────────────────────────────────
     window.CMS_STORE = {
-        init:                   initCMSStore,
-        getState:               getStateSync,
-        saveState:              saveState,
-        importJSON:             importJSON,
-        validateSchema:         validatePortfolioSchema,
-        exportJSON:             exportJSON,
-        logAdminActivity:       logAdminActivity,
-        getAdminLogs:           getAdminLogs,
-        clearAdminLogs:         clearAdminLogs,
-        getMessages:            getMessages,
-        saveMessage:            saveMessage,
-        updateMessageStatus:    updateMessageStatus,
-        deleteMessage:          deleteMessage,
-        getSecurityLogs:        getSecurityLogs,
-        logSecurityEvent:       logSecurityEvent,
-        migrateFromLocalStorage:migrateFromLocalStorage,
+        init: initCMSStore,
+        getState: getStateSync,
+        saveState: saveState,
+        importJSON: importJSON,
+        validateSchema: validatePortfolioSchema,
+        exportJSON: exportJSON,
+        logAdminActivity: logAdminActivity,
+        getAdminLogs: getAdminLogs,
+        clearAdminLogs: clearAdminLogs,
+        getMessages: getMessages,
+        saveMessage: saveMessage,
+        updateMessageStatus: updateMessageStatus,
+        deleteMessage: deleteMessage,
+        getSecurityLogs: getSecurityLogs,
+        logSecurityEvent: logSecurityEvent,
+        migrateFromLocalStorage: migrateFromLocalStorage,
         resetToDefaults: async function () {
             const defaultData = window.PORTFOLIO_INITIAL_DATA || getEmptyState();
             await saveState(defaultData, 'Reset Portfolio Data to Defaults', 'Portfolio CMS', 'Defaults');

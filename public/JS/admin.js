@@ -88,7 +88,7 @@
     //  Credentials are NEVER validated in browser JS.
     //  The server (/api/login) validates them and returns a signed JWT.
     // =========================================================================
-    const AUTH_TOKEN_KEY  = 'nivesh_admin_auth_token';       // stores the JWT
+    const AUTH_TOKEN_KEY = 'nivesh_admin_auth_token';       // stores the JWT
     const AUTH_LOGOUT_KEY = 'nivesh_admin_logout_signal';    // cross-tab signal
 
     /** Returns the stored JWT, or null if not authenticated. */
@@ -300,55 +300,55 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ password: pwd, pin: pin })
             })
-            .then(function (response) {
-                return response.json().then(function (data) {
-                    return { status: response.status, ok: response.ok, data: data };
+                .then(function (response) {
+                    return response.json().then(function (data) {
+                        return { status: response.status, ok: response.ok, data: data };
+                    });
+                })
+                .then(function (result) {
+                    if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Access Admin Panel'; }
+
+                    if (result.ok && result.data.success && result.data.token) {
+                        // ── SUCCESS ─────────────────────────────────────────────
+                        sessionStorage.setItem(AUTH_TOKEN_KEY, result.data.token);
+                        if (window.CMS_STORE) {
+                            window.CMS_STORE.logSecurityEvent('LOGIN', 'server', 'SUCCESS');
+                            window.CMS_STORE.logAdminActivity('Logged in to Admin Panel', 'Authentication', 'LOGIN');
+                        }
+                        hideAlert();
+                        clearFieldErrors();
+                        showAdminDashboard();
+                        switchTab('dashboard');
+                        showAdminToast('Welcome back! NIVEN.');
+
+                    } else {
+                        // ── SERVER REJECTED ──────────────────────────────────────
+                        if (window.CMS_STORE) window.CMS_STORE.logSecurityEvent('FAILED_LOGIN', 'server', 'FAILURE');
+                        const msg = (result.data && result.data.message) || 'Invalid credentials.';
+
+                        if (msg.toLowerCase().includes('password') && msg.toLowerCase().includes('pin')) {
+                            showFieldError(pwdInput, pwdError, pwdErrorText, 'Incorrect password entered');
+                            showFieldError(pinInput, pinError, pinErrorText, 'Incorrect PIN entered');
+                        } else if (msg.toLowerCase().includes('password')) {
+                            showFieldError(pwdInput, pwdError, pwdErrorText, 'This password is incorrect');
+                            if (pwdInput) pwdInput.focus();
+                        } else if (msg.toLowerCase().includes('pin')) {
+                            showFieldError(pinInput, pinError, pinErrorText, 'This PIN is incorrect');
+                            if (pinInput) pinInput.focus();
+                        }
+
+                        showAlert('Authentication Failed', msg);
+                    }
+                })
+                .catch(function (err) {
+                    if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Access Admin Panel'; }
+                    console.error('[Admin Login] Network error:', err);
+                    showAlert(
+                        'Connection Error',
+                        'Unable to reach the authentication server. Make sure the local server (npm start) is running.',
+                        true
+                    );
                 });
-            })
-            .then(function (result) {
-                if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Access Admin Panel'; }
-
-                if (result.ok && result.data.success && result.data.token) {
-                    // ── SUCCESS ─────────────────────────────────────────────
-                    sessionStorage.setItem(AUTH_TOKEN_KEY, result.data.token);
-                    if (window.CMS_STORE) {
-                        window.CMS_STORE.logSecurityEvent('LOGIN', 'server', 'SUCCESS');
-                        window.CMS_STORE.logAdminActivity('Logged in to Admin Panel', 'Authentication', 'LOGIN');
-                    }
-                    hideAlert();
-                    clearFieldErrors();
-                    showAdminDashboard();
-                    switchTab('dashboard');
-                    showAdminToast('Welcome back! NIVEN.');
-
-                } else {
-                    // ── SERVER REJECTED ──────────────────────────────────────
-                    if (window.CMS_STORE) window.CMS_STORE.logSecurityEvent('FAILED_LOGIN', 'server', 'FAILURE');
-                    const msg = (result.data && result.data.message) || 'Invalid credentials.';
-
-                    if (msg.toLowerCase().includes('password') && msg.toLowerCase().includes('pin')) {
-                        showFieldError(pwdInput, pwdError, pwdErrorText, 'Incorrect password entered');
-                        showFieldError(pinInput, pinError, pinErrorText, 'Incorrect PIN entered');
-                    } else if (msg.toLowerCase().includes('password')) {
-                        showFieldError(pwdInput, pwdError, pwdErrorText, 'This password is incorrect');
-                        if (pwdInput) pwdInput.focus();
-                    } else if (msg.toLowerCase().includes('pin')) {
-                        showFieldError(pinInput, pinError, pinErrorText, 'This PIN is incorrect');
-                        if (pinInput) pinInput.focus();
-                    }
-
-                    showAlert('Authentication Failed', msg);
-                }
-            })
-            .catch(function (err) {
-                if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Access Admin Panel'; }
-                console.error('[Admin Login] Network error:', err);
-                showAlert(
-                    'Connection Error',
-                    'Unable to reach the authentication server. Make sure the local server (npm start) is running.',
-                    true
-                );
-            });
         };
 
         if (loginForm) loginForm.addEventListener('submit', doLogin);
@@ -1489,8 +1489,8 @@
 
         listEl.innerHTML = currentProjectImages.map((imgUrl, i) => `
             <div style="position: relative; width: 80px; height: 80px; border-radius: 8px; overflow: hidden; border: 2px solid var(--border-color); background: var(--bg-card); flex-shrink: 0; box-shadow: var(--shadow-sm);">
-                <img src="${imgUrl}" alt="Screenshot ${i+1}" style="width: 100%; height: 100%; object-fit: cover;">
-                <span style="position: absolute; bottom: 2px; left: 2px; background: rgba(0,0,0,0.7); color: #fff; font-size: 0.65rem; padding: 1px 5px; border-radius: 4px; font-weight: 700;">#${i+1}</span>
+                <img src="${imgUrl}" alt="Screenshot ${i + 1}" style="width: 100%; height: 100%; object-fit: cover;">
+                <span style="position: absolute; bottom: 2px; left: 2px; background: rgba(0,0,0,0.7); color: #fff; font-size: 0.65rem; padding: 1px 5px; border-radius: 4px; font-weight: 700;">#${i + 1}</span>
                 <button type="button" onclick="window.removeProjectImageAt(${i})" style="position: absolute; top: 2px; right: 2px; background: #ef4444; color: #fff; border: none; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; cursor: pointer; line-height: 1; box-shadow: 0 2px 4px rgba(0,0,0,0.3);" title="Remove this screenshot">&times;</button>
             </div>
         `).join('');
@@ -1778,21 +1778,42 @@
     };
 
     // CERTIFICATES CMS
+    // =============================================
+    // CERTIFICATES CMS - Full Modal Edit (like Projects)
+    // =============================================
     function renderCertificatesCms(certs) {
         const container = document.getElementById('cmsCertsContainer');
         if (!container || !certs) return;
 
+        if (certs.length === 0) {
+            container.innerHTML = `
+                <div style="text-align: center; padding: 40px 20px; color: var(--text-secondary);">
+                    <i class="fas fa-award" style="font-size: 2.5rem; color: var(--text-muted); margin-bottom: 12px;"></i>
+                    <p>No certificates found. Click <strong>"Add Certification"</strong> to create one.</p>
+                </div>
+            `;
+            return;
+        }
+
         container.innerHTML = certs.map((c, idx) => `
             <div class="cms-item-card">
                 <div class="cms-item-main">
-                    <strong class="cms-item-title">${c.title}</strong>
-                    <div class="cms-item-subtitle">${c.issuer} · ${c.issue_date}</div>
+                    <div class="cms-item-header" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                        <span style="font-size: 1.2rem;">${c.icon || '🏆'}</span>
+                        <strong class="cms-item-title">${c.title}</strong>
+                        ${c.category ? `<span class="badge badge-info">${c.category}</span>` : ''}
+                    </div>
+                    <div class="cms-item-subtitle" style="margin-top: 4px;">${c.issuer}${c.issue_date ? ' · ' + c.issue_date : ''}</div>
+                    ${c.description ? `<p class="cms-item-desc" style="margin-top: 6px; color: var(--text-secondary); font-size: 0.88rem;">${c.description}</p>` : ''}
                 </div>
                 <div class="cms-item-actions">
+                    <button class="btn-cms-secondary" onclick="window.openCertModal(${idx})" title="Edit certificate" style="display: inline-flex; align-items: center; gap: 6px;">
+                        <i class="fas fa-edit"></i> Edit
+                    </button>
                     <button class="btn-cms-status ${c.publish_status === 'Published' ? 'published' : 'draft'}" onclick="window.toggleCertPublish(${idx})">
                         ${c.publish_status || 'Published'}
                     </button>
-                    <button class="btn-cms-danger" onclick="window.deleteCert(${idx})" title="Delete certification">
+                    <button class="btn-cms-danger" onclick="window.deleteCert(${idx})" title="Delete certificate">
                         <i class="fas fa-trash"></i>
                     </button>
                 </div>
@@ -1800,60 +1821,181 @@
         `).join('');
     }
 
-    window.promptAddCert = function () {
-        const title = prompt("Certificate Title (e.g. AWS Cloud Practitioner):");
-        if (!title) return;
-        const issuer = prompt("Issuer (e.g. AWS):");
+    // Cert Modal: Image preview helper
+    function updateCertImagePreview(url) {
+        const preview = document.getElementById('certImgPreview');
+        const fallback = document.getElementById('certImgFallback');
+        if (url && url.trim()) {
+            if (preview) { preview.src = url; preview.style.display = 'block'; }
+            if (fallback) fallback.style.display = 'none';
+        } else {
+            if (preview) { preview.src = ''; preview.style.display = 'none'; }
+            if (fallback) fallback.style.display = 'flex';
+        }
+    }
 
+    // Cert Modal: Initialize controls (called once on init)
+    function initCertModalControls() {
+        const overlay = document.getElementById('certModal');
+        const form = document.getElementById('certForm');
+        const closeBtn = document.getElementById('closeCertModalBtn');
+        const cancelBtn = document.getElementById('cancelCertModalBtn');
+        const imgUrlInput = document.getElementById('certImgUrlInput');
+        const imgFileInput = document.getElementById('certImgFileInput');
+        const removeImgBtn = document.getElementById('certRemoveImgBtn');
+
+        if (!overlay) return;
+
+        const closeModal = () => { overlay.classList.remove('active'); };
+        if (closeBtn) closeBtn.onclick = closeModal;
+        if (cancelBtn) cancelBtn.onclick = closeModal;
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(); });
+
+        if (imgUrlInput) {
+            imgUrlInput.addEventListener('input', () => updateCertImagePreview(imgUrlInput.value));
+        }
+
+        if (imgFileInput) {
+            imgFileInput.addEventListener('change', async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = async (ev) => {
+                    let dataUrl = ev.target.result;
+                    try { dataUrl = await compressImage(dataUrl, 1200, 0.85); } catch (_) {}
+                    if (imgUrlInput) imgUrlInput.value = dataUrl;
+                    updateCertImagePreview(dataUrl);
+                    showAdminToast('Certificate image uploaded!');
+                };
+                reader.readAsDataURL(file);
+                imgFileInput.value = '';
+            });
+        }
+
+        if (removeImgBtn) {
+            removeImgBtn.onclick = () => {
+                if (imgUrlInput) imgUrlInput.value = '';
+                updateCertImagePreview('');
+            };
+        }
+
+        if (form) {
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const idx = parseInt(document.getElementById('certIndexInput')?.value ?? '-1');
+                const state = window.CMS_STORE.getState();
+
+                const certData = {
+                    id: idx >= 0 ? (state.certificates[idx]?.id || 'cert-' + Date.now()) : 'cert-' + Date.now(),
+                    title: document.getElementById('certTitleInput')?.value?.trim() || '',
+                    issuer: document.getElementById('certIssuerInput')?.value?.trim() || '',
+                    issue_date: document.getElementById('certIssueDateInput')?.value?.trim() || '',
+                    category: document.getElementById('certCategoryInput')?.value?.trim() || '',
+                    description: document.getElementById('certDescInput')?.value?.trim() || '',
+                    credential_id: document.getElementById('certCredentialIdInput')?.value?.trim() || '',
+                    credential_url: document.getElementById('certCredentialUrlInput')?.value?.trim() || '',
+                    icon: document.getElementById('certIconInput')?.value?.trim() || '🏆',
+                    display_order: parseInt(document.getElementById('certOrderInput')?.value) || (state.certificates.length + 1),
+                    certificate_image_url: document.getElementById('certImgUrlInput')?.value?.trim() || '',
+                    is_active: true,
+                    published: true,
+                    publish_status: idx >= 0 ? (state.certificates[idx]?.publish_status || 'Published') : 'Published'
+                };
+
+                if (!certData.title) { showAdminToast('Certificate title is required!'); return; }
+
+                const isNew = idx < 0;
+                if (isNew) {
+                    state.certificates.push(certData);
+                } else {
+                    state.certificates[idx] = certData;
+                }
+
+                window.CMS_STORE.saveState(state, (isNew ? 'Added' : 'Updated') + ' Certificate: ' + certData.title, 'Certificates');
+                showAdminToast('Certificate ' + (isNew ? 'added' : 'saved') + '!');
+                closeModal();
+                refreshAllDashboardData();
+            });
+        }
+    }
+
+    window.openCertModal = function (idx) {
+        const overlay = document.getElementById('certModal');
+        if (!overlay) return;
+
+        const titleEl = document.getElementById('certModalTitle');
         const state = window.CMS_STORE.getState();
-        state.certificates.push({
-            id: 'cert-' + Date.now(),
-            title: title,
-            issuer: issuer || 'Issuer',
-            issue_date: 'March 2026',
-            description: 'Professional cloud certification.',
-            certificate_image_url: 'assets/img/certificate/aws-practitioner.png',
-            credential_id: '',
-            credential_url: '',
-            icon: '🎨',
-            category: 'Cloud',
-            display_order: state.certificates.length + 1,
-            is_active: true,
-            publish_status: 'Published'
-        });
-        window.CMS_STORE.saveState(state, "Added Certificate: " + title, "Certificates");
-        showAdminToast("Certificate added!");
-        refreshAllDashboardData();
+        const cert = idx >= 0 ? state.certificates[idx] : null;
+
+        if (titleEl) titleEl.innerHTML = `<i class="fas fa-award" style="color: var(--primary);"></i> ${cert ? 'Edit' : 'Add'} Certificate`;
+        document.getElementById('certIndexInput').value = idx;
+
+        const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
+        setVal('certTitleInput', cert?.title);
+        setVal('certIssuerInput', cert?.issuer);
+        setVal('certIssueDateInput', cert?.issue_date);
+        setVal('certCategoryInput', cert?.category);
+        setVal('certDescInput', cert?.description);
+        setVal('certCredentialIdInput', cert?.credential_id);
+        setVal('certCredentialUrlInput', cert?.credential_url);
+        setVal('certIconInput', cert?.icon || '🏆');
+        setVal('certOrderInput', cert?.display_order || (state.certificates.length + 1));
+        setVal('certImgUrlInput', cert?.certificate_image_url);
+        updateCertImagePreview(cert?.certificate_image_url || '');
+
+        overlay.classList.add('active');
     };
 
     window.toggleCertPublish = function (idx) {
         const state = window.CMS_STORE.getState();
         const cur = state.certificates[idx].publish_status || 'Published';
         state.certificates[idx].publish_status = cur === 'Published' ? 'Draft' : 'Published';
-        window.CMS_STORE.saveState(state, "Toggled Certificate publish status", "Certificates");
+        window.CMS_STORE.saveState(state, 'Toggled Certificate publish status', 'Certificates');
         refreshAllDashboardData();
     };
 
     window.deleteCert = function (idx) {
-        if (!confirm("Delete certificate?")) return;
+        if (!confirm('Delete this certificate?')) return;
         const state = window.CMS_STORE.getState();
+        const name = state.certificates[idx]?.title || 'Certificate';
         state.certificates.splice(idx, 1);
-        window.CMS_STORE.saveState(state, "Deleted Certificate", "Certificates");
+        window.CMS_STORE.saveState(state, 'Deleted Certificate: ' + name, 'Certificates');
+        showAdminToast('Certificate deleted.');
         refreshAllDashboardData();
     };
 
-    // ACTIVITIES CMS
+    // =============================================
+    // ACTIVITIES CMS - Full Modal Edit (like Projects)
+    // =============================================
     function renderActivitiesCms(acts) {
         const container = document.getElementById('cmsActivitiesContainer');
         if (!container || !acts) return;
 
+        if (acts.length === 0) {
+            container.innerHTML = `
+                <div style="text-align: center; padding: 40px 20px; color: var(--text-secondary);">
+                    <i class="fas fa-medal" style="font-size: 2.5rem; color: var(--text-muted); margin-bottom: 12px;"></i>
+                    <p>No activities found. Click <strong>"Add Activity"</strong> to create one.</p>
+                </div>
+            `;
+            return;
+        }
+
         container.innerHTML = acts.map((a, idx) => `
             <div class="cms-item-card">
                 <div class="cms-item-main">
-                    <strong class="cms-item-title">${a.title}</strong>
-                    <div class="cms-item-subtitle">${a.organization} (${a.year})</div>
+                    <div class="cms-item-header" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                        <strong class="cms-item-title">${a.title}</strong>
+                        ${a.badge ? `<span class="badge badge-info">${a.badge}</span>` : ''}
+                        ${a.participation_type ? `<span class="badge" style="background: rgba(124,92,252,0.15); color: #a78bfa; border: 1px solid rgba(124,92,252,0.3);">${a.participation_type}</span>` : ''}
+                    </div>
+                    <div class="cms-item-subtitle" style="margin-top: 4px;">${a.organization}${a.year ? ' · ' + a.year : ''}</div>
+                    ${a.description ? `<p class="cms-item-desc" style="margin-top: 6px; color: var(--text-secondary); font-size: 0.88rem;">${a.description}</p>` : ''}
                 </div>
                 <div class="cms-item-actions">
+                    <button class="btn-cms-secondary" onclick="window.openActivityModal(${idx})" title="Edit activity" style="display: inline-flex; align-items: center; gap: 6px;">
+                        <i class="fas fa-edit"></i> Edit
+                    </button>
                     <button class="btn-cms-status ${a.publish_status === 'Published' ? 'published' : 'draft'}" onclick="window.toggleActivityPublish(${idx})">
                         ${a.publish_status || 'Published'}
                     </button>
@@ -1865,44 +2007,154 @@
         `).join('');
     }
 
-    window.promptAddActivity = function () {
-        const title = prompt("Activity Title (e.g. Smart India Hackathon):");
-        if (!title) return;
+    // Activity Modal: Image preview helper
+    function updateActivityImagePreview(url) {
+        const preview = document.getElementById('activityImgPreview');
+        const fallback = document.getElementById('activityImgFallback');
+        if (url && url.trim()) {
+            if (preview) { preview.src = url; preview.style.display = 'block'; }
+            if (fallback) fallback.style.display = 'none';
+        } else {
+            if (preview) { preview.src = ''; preview.style.display = 'none'; }
+            if (fallback) fallback.style.display = 'flex';
+        }
+    }
 
+    // Activity Modal: Initialize controls (called once on init)
+    function initActivityModalControls() {
+        const overlay = document.getElementById('activityModal');
+        const form = document.getElementById('activityForm');
+        const closeBtn = document.getElementById('closeActivityModalBtn');
+        const cancelBtn = document.getElementById('cancelActivityModalBtn');
+        const imgUrlInput = document.getElementById('activityImgUrlInput');
+        const imgFileInput = document.getElementById('activityImgFileInput');
+        const removeImgBtn = document.getElementById('activityRemoveImgBtn');
+
+        if (!overlay) return;
+
+        const closeModal = () => { overlay.classList.remove('active'); };
+        if (closeBtn) closeBtn.onclick = closeModal;
+        if (cancelBtn) cancelBtn.onclick = closeModal;
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(); });
+
+        if (imgUrlInput) {
+            imgUrlInput.addEventListener('input', () => updateActivityImagePreview(imgUrlInput.value));
+        }
+
+        if (imgFileInput) {
+            imgFileInput.addEventListener('change', async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = async (ev) => {
+                    let dataUrl = ev.target.result;
+                    try { dataUrl = await compressImage(dataUrl, 1200, 0.85); } catch (_) {}
+                    if (imgUrlInput) imgUrlInput.value = dataUrl;
+                    updateActivityImagePreview(dataUrl);
+                    showAdminToast('Activity image uploaded!');
+                };
+                reader.readAsDataURL(file);
+                imgFileInput.value = '';
+            });
+        }
+
+        if (removeImgBtn) {
+            removeImgBtn.onclick = () => {
+                if (imgUrlInput) imgUrlInput.value = '';
+                updateActivityImagePreview('');
+            };
+        }
+
+        if (form) {
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const idx = parseInt(document.getElementById('activityIndexInput')?.value ?? '-1');
+                const state = window.CMS_STORE.getState();
+
+                const partSelect = document.getElementById('activityParticipationInput');
+                const actData = {
+                    id: idx >= 0 ? (state.activities[idx]?.id || 'act-' + Date.now()) : 'act-' + Date.now(),
+                    title: document.getElementById('activityTitleInput')?.value?.trim() || '',
+                    organization: document.getElementById('activityOrgInput')?.value?.trim() || '',
+                    year: document.getElementById('activityYearInput')?.value?.trim() || '',
+                    description: document.getElementById('activityDescInput')?.value?.trim() || '',
+                    participation_type: partSelect?.value || 'Participant',
+                    badge: document.getElementById('activityBadgeInput')?.value?.trim() || '',
+                    external_url: document.getElementById('activityExternalUrlInput')?.value?.trim() || '',
+                    display_order: parseInt(document.getElementById('activityOrderInput')?.value) || (state.activities.length + 1),
+                    certificate_image_url: document.getElementById('activityImgUrlInput')?.value?.trim() || '',
+                    event_image_url: idx >= 0 ? (state.activities[idx]?.event_image_url || '') : '',
+                    is_active: true,
+                    published: true,
+                    publish_status: idx >= 0 ? (state.activities[idx]?.publish_status || 'Published') : 'Published'
+                };
+
+                if (!actData.title) { showAdminToast('Activity title is required!'); return; }
+
+                const isNew = idx < 0;
+                if (isNew) {
+                    state.activities.push(actData);
+                } else {
+                    state.activities[idx] = actData;
+                }
+
+                window.CMS_STORE.saveState(state, (isNew ? 'Added' : 'Updated') + ' Activity: ' + actData.title, 'Activities');
+                showAdminToast('Activity ' + (isNew ? 'added' : 'saved') + '!');
+                closeModal();
+                refreshAllDashboardData();
+            });
+        }
+    }
+
+    window.openActivityModal = function (idx) {
+        const overlay = document.getElementById('activityModal');
+        if (!overlay) return;
+
+        const titleEl = document.getElementById('activityModalTitle');
         const state = window.CMS_STORE.getState();
-        state.activities.push({
-            id: 'act-' + Date.now(),
-            title: title,
-            organization: 'Ministry of Education',
-            description: 'Participated in hackathon competition.',
-            year: '2025',
-            participation_type: 'Participant',
-            badge: 'Hackathon',
-            certificate_image_url: 'assets/img/certificate/sih_certificate.jpeg',
-            display_order: state.activities.length + 1,
-            is_active: true,
-            publish_status: 'Published'
-        });
-        window.CMS_STORE.saveState(state, "Added Activity: " + title, "Activities");
-        showAdminToast("Activity added!");
-        refreshAllDashboardData();
+        const act = idx >= 0 ? state.activities[idx] : null;
+
+        if (titleEl) titleEl.innerHTML = `<i class="fas fa-medal" style="color: var(--primary);"></i> ${act ? 'Edit' : 'Add'} Activity`;
+        document.getElementById('activityIndexInput').value = idx;
+
+        const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
+        setVal('activityTitleInput', act?.title);
+        setVal('activityOrgInput', act?.organization);
+        setVal('activityYearInput', act?.year);
+        setVal('activityDescInput', act?.description);
+        setVal('activityBadgeInput', act?.badge);
+        setVal('activityExternalUrlInput', act?.external_url);
+        setVal('activityOrderInput', act?.display_order || (state.activities.length + 1));
+        setVal('activityImgUrlInput', act?.certificate_image_url);
+        updateActivityImagePreview(act?.certificate_image_url || '');
+
+        // Set participation type dropdown
+        const partSelect = document.getElementById('activityParticipationInput');
+        if (partSelect && act?.participation_type) {
+            partSelect.value = act.participation_type;
+        }
+
+        overlay.classList.add('active');
     };
 
     window.toggleActivityPublish = function (idx) {
         const state = window.CMS_STORE.getState();
         const cur = state.activities[idx].publish_status || 'Published';
         state.activities[idx].publish_status = cur === 'Published' ? 'Draft' : 'Published';
-        window.CMS_STORE.saveState(state, "Toggled Activity publish status", "Activities");
+        window.CMS_STORE.saveState(state, 'Toggled Activity publish status', 'Activities');
         refreshAllDashboardData();
     };
 
     window.deleteActivity = function (idx) {
-        if (!confirm("Delete activity?")) return;
+        if (!confirm('Delete this activity?')) return;
         const state = window.CMS_STORE.getState();
+        const name = state.activities[idx]?.title || 'Activity';
         state.activities.splice(idx, 1);
-        window.CMS_STORE.saveState(state, "Deleted Activity", "Activities");
+        window.CMS_STORE.saveState(state, 'Deleted Activity: ' + name, 'Activities');
+        showAdminToast('Activity deleted.');
         refreshAllDashboardData();
     };
+
 
     // CONTACT CMS
     function renderContactCms(contact) {
@@ -2055,9 +2307,9 @@
                 if (!file) return;
 
                 // 1. Strict PDF format validation (mime-type and filename extension)
-                const isPdf = (file.type === 'application/pdf' || 
-                              file.type.includes('pdf') || 
-                              file.name.toLowerCase().endsWith('.pdf'));
+                const isPdf = (file.type === 'application/pdf' ||
+                    file.type.includes('pdf') ||
+                    file.name.toLowerCase().endsWith('.pdf'));
 
                 if (!isPdf) {
                     showAdminToast('Invalid file format! Please select a PDF file (.pdf only).', 'error');
