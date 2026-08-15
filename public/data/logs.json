@@ -1,5 +1,14 @@
 [
   {
+    "action": "Logged in to Admin Panel",
+    "section": "Authentication",
+    "recordTitle": "",
+    "actionType": "LOGIN",
+    "adminName": "Nivesh R",
+    "timestamp": "15 Aug 2026, 10:23 PM",
+    "id": "log_1786812819174"
+  },
+  {
     "action": "Updated Project: NEUROHIRE AI",
     "section": "Projects",
     "recordTitle": "NEUROHIRE AI",
