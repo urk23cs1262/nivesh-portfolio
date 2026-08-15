@@ -259,13 +259,8 @@
       "long_description": "Enterprise AI recruitment platform built with Next.js, FastAPI, PostgreSQL, LangGraph, and Gemini. Features RAG-powered resume parsing and candidate ranking.",
       "github_url": "https://github.com/theniveshr/NeuroHire.git",
       "live_demo_url": "",
-      "image_url": "/assets/projects/Screenshot__419__1786809790444.png",
-      "images": [
-        "/assets/projects/Screenshot__419__1786809790444.png",
-        "/assets/projects/Screenshot__420__1786809793701.png",
-        "/assets/projects/Screenshot__421__1786809796479.png",
-        "/assets/projects/Screenshot__422__1786809799383.png"
-      ],
+      "image_url": "",
+      "images": [],
       "technologies": [
         "Next.js",
         "FastAPI",
@@ -279,12 +274,7 @@
       "published": true,
       "publish_status": "Published",
       "category": "AI / ML",
-      "screenshots": [
-        "/assets/projects/Screenshot__419__1786809790444.png",
-        "/assets/projects/Screenshot__420__1786809793701.png",
-        "/assets/projects/Screenshot__421__1786809796479.png",
-        "/assets/projects/Screenshot__422__1786809799383.png"
-      ]
+      "screenshots": []
     },
     {
       "id": "proj-2",
@@ -717,5 +707,5 @@
       "is_active": true
     }
   ],
-  "lastUpdated": "2026-08-15T16:12:34.092Z"
+  "lastUpdated": "2026-08-15T16:13:51.096Z"
 }
