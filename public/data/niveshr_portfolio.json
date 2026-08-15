@@ -333,7 +333,8 @@
       "is_active": true,
       "published": true,
       "publish_status": "Published",
-      "category": "AI / Computer Vision"
+      "category": "AI / Computer Vision",
+      "screenshots": []
     },
     {
       "id": "proj-4",
@@ -716,5 +717,5 @@
       "is_active": true
     }
   ],
-  "lastUpdated": "2026-08-15T16:03:44.657Z"
+  "lastUpdated": "2026-08-15T16:12:34.092Z"
 }
