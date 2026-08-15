@@ -36,6 +36,9 @@
             toast.style.transform = 'translateY(10px)';
         }, 3000);
     }
+    // Exposed so cmsStore.js can surface save/sync errors without a circular
+    // module dependency (cmsStore.js is loaded before admin.js).
+    window.showAdminToast = showAdminToast;
 
     function initAdmin() {
         initThemeEngine();
@@ -157,6 +160,16 @@
         showAdminLogin();
         showAdminToast('Logged out successfully.');
     }
+
+    /** Session-expired handler: fired by cmsStore.js's apiFetch() whenever the
+     *  server rejects a request with 401 (expired/invalid JWT). Without this,
+     *  edits made after the 8-hour session expires would fail silently. */
+    window.addEventListener('cms_session_expired', function () {
+        if (!isAuthenticated()) return; // already logged out, avoid duplicate toast
+        sessionStorage.removeItem(AUTH_TOKEN_KEY);
+        showAdminLogin();
+        showAdminToast('Your session expired. Please log in again.', 'error');
+    });
 
     /** Back-button guard: if not authenticated, never restore the dashboard */
     window.addEventListener('popstate', function () {
@@ -1662,6 +1675,11 @@
                             })
                         });
 
+                        if (res.status === 401) {
+                            window.dispatchEvent(new CustomEvent('cms_session_expired'));
+                            break;
+                        }
+
                         const json = await res.json();
 
                         if (json && json.success && json.url) {
@@ -2073,6 +2091,12 @@
                                 fileBase64
                             })
                         });
+
+                        if (res.status === 401) {
+                            window.dispatchEvent(new CustomEvent('cms_session_expired'));
+                            if (window.updateSaveIndicator) window.updateSaveIndicator(false);
+                            return;
+                        }
 
                         const json = await res.json();
 

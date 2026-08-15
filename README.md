@@ -1,65 +1,97 @@
 # Nivesh R | Professional Portfolio 🚀
 
-Welcome to the repository of my personal portfolio website. This project showcases my journey as a B.Tech Computer Science student, highlighting my expertise in Full Stack Development, AI/ML, and IoT systems.
-
-![Portfolio Preview](assets/img/NIVESH%20R.jpg)
+Personal portfolio site with a full admin CMS: edit every section (about, education,
+experience, skills, projects, certificates, activities, contact) from `/admin.html`,
+backed by a small Node/Express API that commits changes straight to this GitHub repo
+(or to the local filesystem when developing without GitHub configured).
 
 ## 🌟 Key Features
 
-- **Modern Responsive Design**: A mobile-first, fluid interface built with Vanilla CSS and modern layout techniques (Grid/Flexbox).
-- **Dynamic Dark/Light Mode**: A custom theme engine with a premium aesthetic that persists across sessions.
-- **Interactive Timeline**: A detailed education history with institutional branding.
-- **Project Showcases**: Categorized project cards with tech tags and direct source code links.
-- **Certificate Preview System**: A custom-built modal system for viewing professional certifications with lazy-loading support.
-- **AI-Powered Contact**: Integrated with EmailJS for direct communication without a backend.
-- **Aesthetic Touches**: Smooth scroll animations, custom scrollbars, reading progress tracking, and typewriter effects.
+- **Modern Responsive Design**: mobile-first, built with vanilla CSS (Grid/Flexbox).
+- **Dynamic Dark/Light Mode** with a persisted theme engine.
+- **Full Admin CMS** (`/admin.html`): JWT-protected dashboard to edit every section of
+  the site, upload project screenshots/certificates/resume, and review contact messages
+  and an audit log — no database required.
+- **Zero-database storage**: content lives in `public/data/*.json`. In production the API
+  commits updates to this GitHub repo via the GitHub REST API; locally it just writes to
+  disk.
+- **Interactive project gallery**, certificate viewer modal, and animated scroll reveals.
+- **Contact form** that saves messages to the CMS and sends a copy via EmailJS.
 
 ## 🛠️ Tech Stack
 
-- **Core**: HTML5, JavaScript (ES6+)
-- **Styling**: Vanilla CSS (Custom properties, Modern UI patterns)
-- **Icons**: FontAwesome 6.4
-- **Fonts**: Google Fonts (Syne, DM Sans)
-- **Communication**: [EmailJS](https://www.emailjs.com/)
-- **Deployment**: Vercel / GitHub Pages
+- **Frontend**: HTML5, vanilla JavaScript (ES6+), vanilla CSS
+- **Backend**: Node.js, Express, `jsonwebtoken` (admin auth), GitHub REST API (storage)
+- **Icons/Fonts**: FontAwesome 6.4, Google Fonts (Syne, DM Sans)
+- **Email**: [EmailJS](https://www.emailjs.com/)
+- **Deployment**: Vercel (see `vercel.json`)
 
-## 📂 Project Highlights
+## 🚀 Getting Started (local development)
 
-| Project | Tech Stack | Description |
-|---------|------------|-------------|
-| **CAREERARC** | React, Node, AI | AI Resume Intelligence Platform with ATS scoring. |
-| **HydroWatch** | FastAPI, Docker, ML | Real-time water monitoring with 94% anomaly detection accuracy. |
-| **Smart-Tag** | YOLO, CV, Flask | ML-based toll verification using license plate recognition. |
-| **ReconAI PRO** | Gemini API, Node | AI assistant for bug bounty reconnaissance. |
-| **St. John Church** | MERN Stack | Modern community platform with multilingual support. |
-
-## 🚀 Getting Started
-
-To run this project locally:
-
-1. **Clone the repository:**
+1. **Clone the repository and install dependencies:**
    ```bash
-   git clone https://github.com/theniveshr/NIVESH-PORTFOLIO.git
+   git clone <this-repo-url>
+   cd "NIVESH PORTFOLIO"
+   npm install
    ```
 
-2. **Open the project:**
-   Simply open `index.html` in your preferred web browser, or use the **Live Server** extension in VS Code.
+2. **Configure environment variables:**
+   Copy `.env.example` to `.env` and fill in real values:
+   ```bash
+   cp .env.example .env
+   ```
+   - `ADMIN_PASSWORD`, `ADMIN_PIN`, `JWT_SECRET` — required for `/admin.html` login.
+     Pick a long, random `JWT_SECRET` (e.g. `openssl rand -hex 32`).
+   - `GITHUB_TOKEN`, `GITHUB_OWNER`, `GITHUB_REPO`, `GITHUB_BRANCH` — optional. If
+     `GITHUB_TOKEN` is left blank, the API falls back to writing directly to the local
+     `public/data/` files instead of committing to GitHub, which is the easiest way to
+     develop locally.
 
-3. **Configure EmailJS (Optional):**
-   Update the `serviceID` and `templateID` in `JS/script.js` to use your own EmailJS account.
+   **Never commit `.env`** — it's already excluded via `.gitignore`. If a real `.env`
+   with live secrets is ever accidentally shared or committed, rotate every value in it
+   immediately (revoke the GitHub token, change the admin password/PIN, regenerate the
+   JWT secret).
+
+3. **Run the server:**
+   ```bash
+   npm start
+   ```
+   - Public site → http://localhost:3000/
+   - Admin CMS → http://localhost:3000/admin.html
+   - API health check → http://localhost:3000/api/status
+
+4. **Configure EmailJS (optional):**
+   The public/private EmailJS IDs used for the contact form and visitor-tracking alerts
+   live in `public/JS/script.js` (`emailjs.init(...)`, `service_...`, `template_...`).
+   Swap in your own EmailJS account's IDs to receive messages at your own inbox.
 
 ## 📁 File Structure
 
 ```text
-├── assets/
-│   ├── img/            # Portfolio and certificate images
-│   └── pdf/            # Resume and documentation
-├── CSS/
-│   └── style.css       # Core design system and theme logic
-├── JS/
-│   └── script.js       # UI interactions and EmailJS logic
-└── index.html          # Main entry point
+├── api/
+│   └── index.js          # Express API: auth, portfolio CRUD, uploads, messages, logs
+├── public/
+│   ├── index.html         # Public site
+│   ├── admin.html         # Admin CMS dashboard
+│   ├── CSS/                # style.css (public site), admin.css (CMS)
+│   ├── JS/
+│   │   ├── script.js       # Public site interactions + CMS hydration
+│   │   ├── admin.js        # Admin CMS engine (CRUD, uploads, dashboard)
+│   │   ├── cmsStore.js     # Shared data layer: talks to /api/*, caches locally
+│   │   └── initialData.js  # Fallback content if the API is unreachable
+│   ├── data/                # JSON "database": portfolio, messages, logs, analytics
+│   └── assets/               # Images, certificates, resume PDF
+├── vercel.json             # Routes /api/* to api/index.js, everything else to /public
+└── package.json
 ```
+
+## ⚠️ Notes on privacy / analytics
+
+`public/JS/script.js` sends an email (via EmailJS) with the visitor's approximate
+location, IP, browser, and OS on each new site visit, using a third-party geolocation
+API (`ipapi.co`). This is intentional visitor-analytics behavior, but it does share
+visitor data with a third party — worth knowing about (and disclosing, e.g. in a privacy
+notice) if that matters for your audience.
 
 ## 📬 Contact
 

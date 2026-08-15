@@ -29,6 +29,57 @@ const PORT          = process.env.PORT          || 3000;
 
 const IS_GITHUB_STORAGE = Boolean(GITHUB_TOKEN && GITHUB_TOKEN.trim().length > 0);
 
+// ── Startup Safety Checks ─────────────────────────────────────────────────────
+// Fail fast instead of silently running with an insecure/blank secret.
+// (A blank JWT_SECRET or blank admin credentials would let anyone forge a
+//  valid admin session token, or log in without knowing a real password.)
+const missingSecrets = [];
+if (!ADMIN_PASSWORD) missingSecrets.push('ADMIN_PASSWORD');
+if (!ADMIN_PIN) missingSecrets.push('ADMIN_PIN');
+if (!JWT_SECRET) missingSecrets.push('JWT_SECRET');
+if (missingSecrets.length > 0) {
+    const msg = `[FATAL] Missing required environment variable(s): ${missingSecrets.join(', ')}. ` +
+        `Set them in your .env file (local) or Project → Settings → Environment Variables (Vercel).`;
+    if (process.env.NODE_ENV === 'production' || process.env.VERCEL) {
+        // In production, refuse to run with insecure/absent secrets.
+        throw new Error(msg);
+    } else {
+        console.warn('\u001b[33m' + msg + ' Admin login/session features will not work until this is fixed.\u001b[0m');
+    }
+}
+
+// ── Simple In-Memory Login Rate Limiter ───────────────────────────────────────
+// Not a substitute for a proper reverse-proxy/WAF rate limiter, but it stops
+// naive automated password/PIN guessing against /api/login.
+const LOGIN_WINDOW_MS = 10 * 60 * 1000; // 10 minutes
+const LOGIN_MAX_ATTEMPTS = 8;
+const loginAttempts = new Map(); // ip -> { count, firstAttempt }
+
+function isLoginRateLimited(ip) {
+    const now = Date.now();
+    const entry = loginAttempts.get(ip);
+    if (!entry) return false;
+    if (now - entry.firstAttempt > LOGIN_WINDOW_MS) {
+        loginAttempts.delete(ip);
+        return false;
+    }
+    return entry.count >= LOGIN_MAX_ATTEMPTS;
+}
+
+function recordLoginAttempt(ip) {
+    const now = Date.now();
+    const entry = loginAttempts.get(ip);
+    if (!entry || now - entry.firstAttempt > LOGIN_WINDOW_MS) {
+        loginAttempts.set(ip, { count: 1, firstAttempt: now });
+    } else {
+        entry.count += 1;
+    }
+}
+
+function clearLoginAttempts(ip) {
+    loginAttempts.delete(ip);
+}
+
 // Middleware
 app.use(cors());
 app.use(express.json({ limit: '25mb' }));
@@ -243,22 +294,34 @@ const router = express.Router();
  * POST /api/login or /login
  */
 router.post('/login', (req, res) => {
+    const ip = req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown';
+
+    if (isLoginRateLimited(ip)) {
+        return res.status(429).json({
+            success: false,
+            message: 'Too many failed login attempts. Please try again in a few minutes.'
+        });
+    }
+
     const { password, pin } = req.body || {};
     if (!password || !pin) {
         return res.status(400).json({ success: false, message: 'Password and PIN are required.' });
     }
+    if (!ADMIN_PASSWORD || !ADMIN_PIN || !JWT_SECRET) {
+        return res.status(503).json({ success: false, message: 'Admin login is not configured on the server yet.' });
+    }
+
     const passwordValid = password === ADMIN_PASSWORD;
     const pinValid      = pin      === ADMIN_PIN;
 
-    if (!passwordValid && !pinValid) {
-        return res.status(401).json({ success: false, message: 'Both Admin Password and Security PIN are incorrect.' });
+    // Intentionally generic: don't reveal which of the two credentials was
+    // wrong, so an attacker can't brute-force them one at a time.
+    if (!passwordValid || !pinValid) {
+        recordLoginAttempt(ip);
+        return res.status(401).json({ success: false, message: 'Admin Password or Security PIN is incorrect.' });
     }
-    if (!passwordValid) {
-        return res.status(401).json({ success: false, message: 'Admin Password is incorrect.' });
-    }
-    if (!pinValid) {
-        return res.status(401).json({ success: false, message: 'Security PIN is incorrect.' });
-    }
+
+    clearLoginAttempts(ip);
     const token = jwt.sign(
         { role: 'admin', iat: Math.floor(Date.now() / 1000) },
         JWT_SECRET,

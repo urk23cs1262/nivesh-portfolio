@@ -7,7 +7,10 @@
 (function () {
     'use strict';
 
-    const STORAGE_KEY    = 'nivesh_portfolio_cache_v6';
+    // NOTE: this key must stay in sync with the cache key used in script.js
+    // (the public site's read-only fallback cache) — otherwise the public
+    // page and the admin CMS can drift out of sync when the API is unreachable.
+    const STORAGE_KEY    = 'nivesh_portfolio_cache_v7';
     const AUTH_TOKEN_KEY = 'nivesh_admin_auth_token';
 
     function safeGetSessionStorage(key) {
@@ -32,6 +35,21 @@
             'Content-Type': 'application/json',
             'Authorization': 'Bearer ' + getAuthToken()
         };
+    }
+
+    /**
+     * Wraps fetch() for authenticated admin endpoints. If the server responds
+     * 401 (expired/invalid session), clears the stale token and broadcasts a
+     * 'cms_session_expired' event so the admin UI can show the login screen
+     * instead of silently failing every subsequent save.
+     */
+    async function apiFetch(url, options) {
+        const res = await fetch(url, options);
+        if (res.status === 401) {
+            try { sessionStorage.removeItem(AUTH_TOKEN_KEY); } catch (e) { }
+            window.dispatchEvent(new CustomEvent('cms_session_expired'));
+        }
+        return res;
     }
 
     let currentPortfolioData = null;
@@ -118,17 +136,29 @@
         window.dispatchEvent(new CustomEvent('cms_data_updated', { detail: state }));
 
         // Persist via PUT /api/portfolio
+        let persisted = false;
         try {
-            const res = await fetch('/api/portfolio', {
+            const res = await apiFetch('/api/portfolio', {
                 method: 'PUT',
                 headers: authHeaders(),
                 body: JSON.stringify(state)
             });
             if (res.ok) {
+                persisted = true;
                 console.log('[CMS] Portfolio persisted successfully.');
+            } else if (res.status !== 401) {
+                // 401 is already handled by apiFetch (session-expired event)
+                const errJson = await res.json().catch(() => ({}));
+                console.warn('[CMS] API save failed:', res.status, errJson.message || errJson.error || '');
+                if (window.showAdminToast) {
+                    window.showAdminToast('⚠️ Changes saved locally but failed to sync to the server. Check your connection and try again.', 'error');
+                }
             }
         } catch (e) {
             console.warn('[CMS] API save failed:', e.message);
+            if (window.showAdminToast) {
+                window.showAdminToast('⚠️ Changes saved locally but failed to sync to the server. Check your connection and try again.', 'error');
+            }
         }
 
         if (actionDesc && sectionName) {
@@ -138,6 +168,8 @@
         setTimeout(() => {
             if (window.updateSaveIndicator) window.updateSaveIndicator(false);
         }, 400);
+
+        return persisted;
     }
 
     // ── Export JSON ────────────────────────────────────────────────────────────
@@ -167,7 +199,7 @@
             timestamp: `${formattedDate}, ${formattedTime}`
         };
 
-        fetch('/api/logs', {
+        apiFetch('/api/logs', {
             method: 'POST',
             headers: authHeaders(),
             body: JSON.stringify(entry)
@@ -176,7 +208,7 @@
 
     async function getAdminLogs() {
         try {
-            const res = await fetch('/api/logs', { headers: authHeaders() });
+            const res = await apiFetch('/api/logs', { headers: authHeaders() });
             if (res.ok) {
                 const json = await res.json();
                 return json.logs || [];
@@ -187,7 +219,7 @@
 
     async function clearAdminLogs() {
         try {
-            await fetch('/api/logs', { method: 'DELETE', headers: authHeaders() });
+            await apiFetch('/api/logs', { method: 'DELETE', headers: authHeaders() });
         } catch (e) { }
         window.dispatchEvent(new CustomEvent('cms_data_updated'));
     }
@@ -195,7 +227,7 @@
     // ── Messages ──────────────────────────────────────────────────────────────
     async function getMessages() {
         try {
-            const res = await fetch('/api/messages', { headers: authHeaders() });
+            const res = await apiFetch('/api/messages', { headers: authHeaders() });
             if (res.ok) {
                 const json = await res.json();
                 return (json.messages || []).map(m => ({
@@ -231,7 +263,7 @@
 
     async function updateMessageStatus(id, status) {
         try {
-            await fetch('/api/messages/' + id, {
+            await apiFetch('/api/messages/' + id, {
                 method: 'PATCH',
                 headers: authHeaders(),
                 body: JSON.stringify({ status })
@@ -241,7 +273,7 @@
 
     async function deleteMessage(id) {
         try {
-            await fetch('/api/messages/' + id, {
+            await apiFetch('/api/messages/' + id, {
                 method: 'DELETE',
                 headers: authHeaders()
             });
@@ -287,7 +319,7 @@
         }
 
         try {
-            const res = await fetch('/api/portfolio/import', {
+            const res = await apiFetch('/api/portfolio/import', {
                 method: 'POST',
                 headers: authHeaders(),
                 body: JSON.stringify(jsonData)
@@ -317,7 +349,7 @@
         const analytics = analyticsRaw ? JSON.parse(analyticsRaw) : null;
 
         try {
-            const res = await fetch('/api/migrate', {
+            const res = await apiFetch('/api/migrate', {
                 method: 'POST',
                 headers: authHeaders(),
                 body: JSON.stringify({ portfolioData, messages, logs, analytics })

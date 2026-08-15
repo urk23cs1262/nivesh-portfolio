@@ -242,7 +242,9 @@ async function fetchPortfolioFromAPI() {
             const data = await res.json();
             if (data && data.about) {
                 _portfolioDataCache = data;
-                try { localStorage.setItem('nivesh_portfolio_cache_v4', JSON.stringify(data)); } catch (e) {}
+                // Kept in sync with cmsStore.js's STORAGE_KEY so the public page
+                // and the admin CMS never read stale/mismatched cached data.
+                try { localStorage.setItem('nivesh_portfolio_cache_v7', JSON.stringify(data)); } catch (e) {}
                 return data;
             }
         }
@@ -254,8 +256,8 @@ async function fetchPortfolioFromAPI() {
 
 function getPortfolioFromCache() {
     if (_portfolioDataCache) return _portfolioDataCache;
-    // Try new cache key first, then legacy keys
-    const keys = ['nivesh_portfolio_cache_v4', 'nivesh_portfolio_file_cms_data_v3', 'nivesh_admin_portfolio_data'];
+    // Try current cache key first, then legacy keys (oldest last)
+    const keys = ['nivesh_portfolio_cache_v7', 'nivesh_portfolio_cache_v6', 'nivesh_portfolio_cache_v4', 'nivesh_portfolio_file_cms_data_v3', 'nivesh_admin_portfolio_data'];
     for (const key of keys) {
         try {
             const raw = localStorage.getItem(key);
@@ -474,8 +476,8 @@ function hydratePortfolioCMS(portfolio) {
         const actContainer = document.querySelector('#activities .activities-grid');
         if (actContainer) {
             const activeActs = (portfolio.activities || []).filter(a => a.published !== false && a.publish_status !== 'Draft' && a.is_active !== false);
-            actContainer.innerHTML = activeActs.map(a => `
-                <div class="activity-card reveal" ${a.certificate_image_url ? `data-cert="${a.certificate_image_url}"` : ''}>
+            actContainer.innerHTML = activeActs.map((a, idx) => `
+                <div class="activity-card reveal ${idx >= 3 ? 'hidden-activity' : ''}" ${a.certificate_image_url ? `data-cert="${a.certificate_image_url}"` : ''}>
                     <div class="activity-header">
                         <div class="activity-icon font-icon"><i class="fas fa-trophy"></i></div>
                         <div class="activity-badge-group">
@@ -503,7 +505,6 @@ function hydratePortfolioCMS(portfolio) {
                 if (el.textContent.includes('@')) el.textContent = c.email;
             });
             if (c.phone) {
-                const phoneSpan = document.querySelector('.contact-item-text span:has(+ span), .contact-item-text span');
                 const phoneContainer = Array.from(document.querySelectorAll('.contact-item')).find(item => item.innerHTML.includes('fa-phone'));
                 if (phoneContainer) {
                     const span = phoneContainer.querySelector('span');
@@ -762,16 +763,28 @@ if (toggleCertsBtn) {
 }
 
 // ===== TOGGLE ALL ACTIVITIES =====
+// NOTE: activity cards are re-rendered dynamically by hydratePortfolioCMS()
+// (see JS/script.js CMS hydration, section 7), so — unlike a static page —
+// the list of ".hidden-activity" cards must be re-queried on every click
+// rather than captured once up front, or it goes stale as soon as the CMS
+// data loads and replaces the DOM nodes.
 const toggleActivitiesBtn = document.getElementById('toggleActivitiesBtn');
-const hiddenActivities = document.querySelectorAll('.activity-card.hidden-activity');
+
+function refreshActivitiesToggleVisibility() {
+    if (!toggleActivitiesBtn) return;
+    const wrap = toggleActivitiesBtn.closest('.view-more-wrap');
+    const totalCards = document.querySelectorAll('#activities .activities-grid .activity-card').length;
+    if (wrap) wrap.style.display = totalCards > 3 ? '' : 'none';
+}
 
 if (toggleActivitiesBtn) {
-    if (hiddenActivities.length === 0) {
-        const wrap = toggleActivitiesBtn.closest('.view-more-wrap');
-        if (wrap) wrap.style.display = 'none';
-    }
+    refreshActivitiesToggleVisibility();
+    // Re-check visibility whenever the CMS data (re)hydrates the section.
+    window.addEventListener('cms_data_updated', refreshActivitiesToggleVisibility);
+
     toggleActivitiesBtn.addEventListener('click', () => {
         const isExpanded = toggleActivitiesBtn.classList.contains('expanded');
+        const hiddenActivities = document.querySelectorAll('#activities .activities-grid .activity-card.hidden-activity');
         if (!isExpanded) {
             hiddenActivities.forEach(card => {
                 card.classList.remove('hidden-activity');
@@ -780,9 +793,11 @@ if (toggleActivitiesBtn) {
             toggleActivitiesBtn.classList.add('expanded');
             toggleActivitiesBtn.innerHTML = 'Show Less <i class="fas fa-chevron-up"></i>';
         } else {
-            hiddenActivities.forEach(card => {
-                card.classList.add('hidden-activity');
-                card.classList.remove('visible');
+            document.querySelectorAll('#activities .activities-grid .activity-card').forEach((card, idx) => {
+                if (idx >= 3) {
+                    card.classList.add('hidden-activity');
+                    card.classList.remove('visible');
+                }
             });
             toggleActivitiesBtn.classList.remove('expanded');
             toggleActivitiesBtn.innerHTML = 'View All Activities <i class="fas fa-chevron-down"></i>';
