@@ -1,5 +1,14 @@
 [
   {
+    "action": "Logged out of Admin Panel",
+    "section": "Authentication",
+    "recordTitle": "",
+    "actionType": "LOGOUT",
+    "adminName": "Nivesh R",
+    "timestamp": "06 Oct 2026, 05:30 PM",
+    "id": "log_1791288059857"
+  },
+  {
     "action": "Logged in to Admin Panel",
     "section": "Authentication",
     "recordTitle": "",
