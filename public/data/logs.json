@@ -1,5 +1,14 @@
 [
   {
+    "action": "Updated Education: Holy Spirit Matric Hr. Sec. School",
+    "section": "Education",
+    "recordTitle": "Holy Spirit Matric Hr. Sec. School",
+    "actionType": "UPDATE",
+    "adminName": "Nivesh R",
+    "timestamp": "08 Oct 2026, 12:36 PM",
+    "id": "log_1791443195893"
+  },
+  {
     "action": "Logged in to Admin Panel",
     "section": "Authentication",
     "recordTitle": "",
