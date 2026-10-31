@@ -85,7 +85,7 @@ emailjs.init("Tw3LSYbX8-nZodC-t");
 // ===== THEME TOGGLE =====
 const html = document.documentElement;
 const themeBtn = document.getElementById('themeToggle');
-const savedTheme = localStorage.getItem('theme') || 'dark';
+const savedTheme = localStorage.getItem('theme') || 'light';
 html.setAttribute('data-theme', savedTheme);
 themeBtn.innerHTML = savedTheme === 'dark' ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
 
