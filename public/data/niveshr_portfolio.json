@@ -295,12 +295,13 @@
         "JWT",
         "Vercel"
       ],
-      "status": "Currently Developing",
+      "status": "Completed",
       "display_order": 2,
       "is_active": true,
       "published": true,
       "publish_status": "Published",
-      "category": "Web Development"
+      "category": "Web Development",
+      "screenshots": []
     },
     {
       "id": "proj-3",
@@ -708,5 +709,5 @@
       "is_active": true
     }
   ],
-  "lastUpdated": "2026-10-31T07:11:50.719Z"
+  "lastUpdated": "2026-10-31T07:12:28.251Z"
 }
