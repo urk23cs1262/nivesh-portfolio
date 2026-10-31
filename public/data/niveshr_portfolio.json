@@ -186,7 +186,8 @@
       "published": true,
       "skills": [
         "MySQL",
-        "MongoDB"
+        "MongoDB",
+        "PostgreSql"
       ]
     },
     {
@@ -707,5 +708,5 @@
       "is_active": true
     }
   ],
-  "lastUpdated": "2026-10-08T07:07:56.062Z"
+  "lastUpdated": "2026-10-31T07:11:50.719Z"
 }
